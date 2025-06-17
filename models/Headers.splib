@@ -28,11 +28,6 @@ equations: hash(x)=hout
 
 #else
 
-functions:sign/3,verify/3 [destructor],revealsign/1[destructor], pk/1, sigtrue/0
-
-equations: verify(sign(m,r, sk), m, pk(sk)) = sigtrue, // correctness
-	   revealsign(sign(m,r, sk)) = m // the content is not hidden
-
 let MakeDEO = 0
 
 #endif
@@ -180,59 +175,18 @@ axiom k:bitstring; event(ShareLT( k )) && attacker( k ) ==> event(Leak(k)).
 #endif
 
 
-#ifdef MethodZero
+#ifdef MethodFour
 
 export queries:
 "
 (* can be used to restrict methods *)
-restriction m:bitstring; event(MethodOk(m)) ==> m=method_zero.
-"
-
-restriction method_zero:
- "All x #i. MethodOk(x)@i ==> x=method_zero"
- 
-#endif
-
-
-#ifdef MethodOne
-
-export queries:
-"
-(* can be used to restrict methods *)
-restriction m:bitstring; event(MethodOk(m)) ==> m=method_one.
-"
-
-restriction method_one:
- "All x #i. MethodOk(x)@i ==> x=method_one"
- 
-#endif
-
-#ifdef MethodTwo
-
-export queries:
-"
-(* can be used to restrict methods *)
-restriction m:bitstring; event(MethodOk(m)) ==> m=method_two.
-"
-
-restriction method_two:
- "All x #i. MethodOk(x)@i ==> x=method_two"
- 
-#endif
-
-#ifdef MethodThree
-
-export queries:
-"
-(* can be used to restrict methods *)
-restriction m:bitstring; event(MethodOk(m)) ==> m=method_three.
+restriction m:bitstring; event(MethodOk(m)) ==> m=method_four.
 "
 
 restriction method_three:
- "All x #i. MethodOk(x)@i ==> x=method_three"
+ "All x #i. MethodOk(x)@i ==> x=method_four"
  
 #endif
-
 
 #ifdef XorPrecise 
 
