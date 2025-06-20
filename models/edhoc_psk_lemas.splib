@@ -1,0 +1,15 @@
+theory edhoc_lemmas
+begin
+
+// Security properties
+lemma session_key_secrecy:
+    "All I R k #i.
+         !Sessionkey(I, R, k) @i ==>
+         not (Ex #j. K(k) @j)"
+
+lemma mutual_authentication:
+    "All I R k #i.
+         Commit(I, R, k) @i ==>
+         (Ex #j. Running(R, I, k) @j & j < i)"
+
+end
