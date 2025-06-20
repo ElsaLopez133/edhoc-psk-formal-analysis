@@ -14,10 +14,12 @@
 ```bash
 tamarin-prover --prove edhoc_psk_tamarin.spthy
 ```
+```
 
 ### ✅ Prove a specific lemma
 ```bash
 tamarin-prover --prove --lemma=session_key_secrecy edhoc_psk_tamarin.spthy
+```
 ```
 
 You can change session_key_secrecy to any lemma defined in the file (e.g., mutual_authentication, forward_secrecy).
@@ -31,9 +33,11 @@ To explore traces interactively:
 ```bash
 tamarin-prover interactive edhoc_psk_tamarin.spthy
 ```
+```
 
 If it fails to open a window, you're likely missing GUI/X11 support — run locally or use X11 forwarding:
 
 ```bash
 ssh -X user@host
+```
 ```
