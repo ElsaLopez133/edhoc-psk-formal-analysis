@@ -96,7 +96,6 @@ rule I_3:
     [ I_2_state(I, R, cid, X, EAD_3, psk, method, suitesI, C_I, EAD_1, G_Y, TH_2, PRK_2e, plaintext_2, G_X) ]
     -->
     [ 
-      // I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out)
       I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out, G_X, G_Y, C_I, C_R)
     , Out(m3)
     ]
@@ -107,12 +106,10 @@ rule I_4:
         ad_4 = <aead_length, TH_4> 
         plaintext_4 = aeaddec(m4, ad_4, K_4, IV_4) 
     in
-    // [ I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out)
     [ I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out, G_X, G_Y, C_I, C_R)
     , In(m4)
     ]
     --[ !Sessionkey(I, R, PRK_out)
-      // , Commit(I, R, PRK_out)
       , Commit(I, R, PRK_out, G_X, G_Y, C_I, C_R)
       ]->
     [ 
@@ -145,7 +142,6 @@ rule R_1:
       , DH($R, $I, G_X^~Y)
       ]->
     [ 
-      // R_1_state($R, $I, ~cid, ~Y, ~EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK)
       R_1_state($R, $I, ~cid, ~Y, ~EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK, G_X, G_Y, C_I, C_R)
     , Out(m2)
     ]
@@ -170,20 +166,17 @@ rule R_2:
        m4 = aeadenc(EAD_4, ad_4, K_4, IV_4) 
        PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, Hash_length) 
     in
-    // [ R_1_state(R, I, cid, Y, EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK)
        [ R_1_state(R, I, cid, Y, EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK, G_X, G_Y, C_I, C_R)
     , In(m3)
     ]
     --[ Running(R, I, <'responder', PRK_out, G_X, G_Y, C_I, C_R>),
      Commit(R, I, PRK_out, G_X, G_Y, C_I, C_R) ]->
-    // --[ Running(R, I, <'responder', psk>),
     //  Eq(recv_ID_CRED_PSK, ID_CRED_PSK)
     // ]->
     [ 
       !Sessionkey(R, I, PRK_out)
     , Out(m4)
     , !Sessionkey(R, I, PRK_out)
-    // , Commit(R, I, PRK_out)
     , Commit(R, I, PRK_out, G_X, G_Y, C_I, C_R)
     ]
 
@@ -200,9 +193,6 @@ restriction OnlyOnceRestriction:
 
 /* --------- SANITY CHECKS --------- */
 // To run only the executables: tamarin-prover --prove --lemma=executable* edhoc.spthy
-
-// lemma executable_1:
-//   "Ex x #i. Out(x) @i"
 
 lemma executable_2:
   "Ex I R k #i. !Sessionkey(I, R, k) @i"
@@ -235,13 +225,8 @@ lemma mutual_authentication:
       Commit(I, R, k, gx, gy, ci, cr) @i ==> 
       (Ex #j. Running(R, I, <'responder', k, gx, gy, ci, cr>) @j & j < i)"
 
-
-lemma mutual_authentication_initiator:
-  "All R I k gx gy ci cr #i.
-      Commit(R, I, k, gx, gy, ci, cr) @i
-    ==> (Ex #j. Running(I, R, <'initiator',  k, gx, gy, ci, cr>) @j & j < i)"
-
-
+// If roles change
+// If roles change
 lemma mutual_authentication_responder:
   "All R I k gx gy ci cr #i.
      Commit(R, I, k, gx, gy, ci, cr) @i
