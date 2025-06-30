@@ -1,0 +1,97 @@
+// LakePropertiesPSK.splib for EDHOC-PSK method_four
+
+// ******************************************************************
+// ************** Executability  ************************************
+// ******************************************************************
+
+lemma executableI_psk_method:
+  exists-trace
+    "Ex cid psk prk gx gy #i. AcceptI(cid, method_four, psk, prk, gx, gy)@i"
+
+lemma executableR_psk_method:
+  exists-trace
+    "Ex cid psk prk gx gy #i. AcceptR(cid, method_four, psk, prk, gx, gy)@i"
+
+// ******************************************************************
+// ************** Confidentiality  **********************************
+// ******************************************************************
+
+lemma secretR_psk:
+  "All cid m psk prk gx gy #i #j #k.
+     AcceptR(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@k
+   ==> (Ex #t. LeakSessionKey(prk)@t) 
+    | (Ex #t. LeakShare(gy)@t)
+    | (Ex #t. LeakShare(gx)@t)"
+
+lemma secretI_psk:
+  "All cid m psk prk gx gy #i #j #k.
+     AcceptI(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@k
+   ==> (Ex #t. LeakSessionKey(prk)@t)
+    | (Ex #t. LeakShare(gx)@t)
+    | (Ex #t. LeakShare(gy)@t)"
+
+// ******************************************************************
+// ************** Authentication  ***********************************
+// ******************************************************************
+
+lemma honestauthRI_psk_non_inj:
+  "All cid m psk prk gx gy #i #k.
+     AcceptR(cid, m, psk, prk, gx, gy)@i & !Honest(psk)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, m, psk, prk2, gx2, gy2)@t & t < i & prk = prk2)
+    | (Ex #t. LeakShare(gy)@t)"
+
+lemma honestauthIR_psk_non_inj:
+  "All cid m psk prk gx gy #i #k.
+     AcceptI(cid, m, psk, prk, gx, gy)@i & !Honest(psk)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, m, psk, prk2, gx2, gy2)@j & j < i & prk = prk2)
+    | (Ex #t. LeakShare(gx)@t)"
+
+lemma authRI_psk_unique:
+  "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
+     AcceptR(cid1, m, psk, prk, gx1, gy1)@i & AcceptR(cid2, m, psk, prk, gx2, gy2)@j
+   ==> #i = #j"
+
+lemma authIR_psk_unique:
+  "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
+     AcceptI(cid1, m, psk, prk, gx1, gy1)@i & AcceptI(cid2, m, psk, prk, gx2, gy2)@j
+   ==> #i = #j"
+
+// ******************************************************************
+// ************** Key Agreement  ************************************
+// ******************************************************************
+
+lemma key_agreement_psk:
+  "All cid1 cid2 m psk prk1 prk2 gx gy #i #j.
+     AcceptI(cid1, m, psk, prk1, gx, gy)@i &
+     AcceptR(cid2, m, psk, prk2, gx, gy)@j
+   ==> prk1 = prk2"
+
+lemma pfs_psk:
+  "All cid m psk prk gx gy #i #j.
+     AcceptI(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@i
+   ==> (Ex #t. LeakShare(gx)@t & t < i)
+    | (Ex #t. LeakShare(gy)@t & t < i)
+    | (Ex #t. LeakSessionKey(prk)@t)"
+
+// ******************************************************************
+// ************** Additional Security Properties  *******************
+// ******************************************************************
+
+lemma psk_secrecy:
+  "All psk #i #j.
+    !Honest(psk)@i & K(psk)@j ==> F"
+
+lemma session_key_secrecy:
+  "All cid prk #i.
+    FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
+
+// ******************************************************************
+// ************** Helper Lemmas  ************************************
+// ******************************************************************
+
+lemma honest_agents_agree:
+  "All cid1 cid2 psk prk1 prk2 gx gy #i #j #k.
+     AcceptI(cid1, method_four, psk, prk1, gx, gy)@i &
+     AcceptR(cid2, method_four, psk, prk2, gx, gy)@j &
+     !Honest(psk)@k
+   ==> prk1 = prk2"

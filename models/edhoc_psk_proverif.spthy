@@ -1,206 +1,121 @@
 /*
  * Protocol:   EDHOC-PSK
-   https://datatracker.ietf.org/doc/draft-ietf-lake-edhoc-psk/
-
-   A lightweight DH based key exchange, authenticated using Pre-Shared Keys
-
-
-# Weaker primitive modeling and compromises
-`-D=WeakestSignature` enables all weak signature models,  see StrongSignatureExamples/attackfinding.spthy. This actually enables a set of sub-flags, one for each atomic weakness.
-`-D=CollapseHash`  consider a collapsing hash function
-`-D=LeakShare` allows to leak ephemeral shares
-`-D=XorPrecise` emulates a malleable xor.
-`-D=WeakAEAD` is a malleable aead
-
-# Stronger Protocol Check
-`-D=NeutralCheck` enforces that the protocol agents verifies that the DH share they received is not the identity element such that e^x = e    
-`-D=CredCheck` enforces that the agents checks that they do not communicate with themselves.
-
-# Extra security property
-`-D=NonRepudiatonSoundness` incudes processes for non repudiation soundness
-`-D=NonRepudiationCompleteness` incudes processes for non repudiation completeness  -> implies that shares are leaked, and does not work in proverif
-
-Scenarios to check ideally:
- - `tamarin-prover -D=NonRepudiation -D=WeakestSignature -D=LeakShare`
- - `tamarin-prover -D=WeakestSignature -D=LeakShare`
-
+ * Source:     draft-ietf-lake-edhoc-psk
+ * Model:      Cleaned for PSK authentication (method_four), no MAC or signatures
 */
 
-
-theory edhoc
+theory edhoc_psk
 
 begin
 
 builtins: diffie-hellman, hashing
 
-functions: method_four/0, length/0,
-		   hash_length/0, edhoc_mac_length/0, key_length/0, iv_length/0, plaintext_length/0, sign_length/0, aead_length/0,
-		   error_code_one/0, error_code_two/0,
-		   suitesIConst/0, suitesRConst/0,
-		   edhoc_kdf/3,
-		   aeadenc/4, aeaddec/4 [destructor],
-		   make_id/1,
-		   wrap/1,
-		   hash/1, hkdfextract/2, hkdfexpand/2
+functions:
+  method_four/0, length/0,
+  hash_length/0, edhoc_mac_length/0, key_length/0, iv_length/0, plaintext_length/0, sign_length/0, aead_length/0,
+  error_code_one/0, error_code_two/0,
+  suitesIConst/0, suitesRConst/0,
+  edhoc_kdf/3,
+  aeadenc/4, aeaddec/4 [destructor],
+  make_id/1,
+  wrap/1,
+  hash/1, hkdfextract/2, hkdfexpand/2
 
-equations: aeaddec(aeadenc(m,r,k,ad),r, k,ad) = m
-
+equations:
+  aeaddec(aeadenc(m,r,k,ad),r,k,ad) = m
 
 #include "Headers.splib"
 
-/* Protocol description */
-// Initiator and Responder both use PSK
+let I(~cid, ID_CRED_PSK, CRED_PSK) = (
+  in(<method,suitesI,C_I,EAD_1>);
+  event MethodOk(method);
+  new ~X;
+  new ~EAD_3;
+  let G_X = 'g'^~X in
+  let m1 = <method,suitesI,G_X,C_I,EAD_1> in
+  out(m1);
+  in(m2);
+  let <G_Y, CIPHERTEXT_2> = m2 in
+  let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
+  let TH_2 = hash(<wrap(G_Y), wrap(TH_1)>) in
+  let G_YX = G_Y^~X in
+  let PRK_2e = hkdfextract(G_YX, TH_2) in
+  let KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero', TH_2, plaintext_length>, plaintext_length) in
+  let plaintext_2 = decxor(CIPHERTEXT_2, KEYSTREAM_2) in
+  let <C_R, EAD_2> = plaintext_2 in
+  if (method = method_four) then (
+    let PRK_3e2m = PRK_2e in
+    let TH_3 = hash(<wrap(TH_2), plaintext_2, CRED_PSK>) in
+    let SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five', TH_3, hash_length>, hash_length) in
+    let PRK_4e3m = hkdfextract(CRED_PSK, SALT_4e3m) in
+    let KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven', TH_3, plaintext_length>, plaintext_length) in
+    let K_3 = edhoc_kdf(PRK_4e3m, <'twelve', TH_3>, key_length) in
+    let IV_3 = edhoc_kdf(PRK_3e2m, <'thisteen', TH_3>, iv_length) in
+    let plaintext_3b = <'empty', ID_CRED_PSK, TH_3, CRED_PSK, ~EAD_3> in
+    let ad_3 = <aead_length, 'empty', TH_3> in
+    let ciphertext_3b = aeadenc(plaintext_3b, K_3, IV_3, ad_3) in
+    let plaintext_3a = <ID_CRED_PSK, ciphertext_3b> in
+    let m3 = encxor(plaintext_3a, KEYSTREAM_3) in
+    out(m3);
+    let TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_PSK>) in
+    let K_4 = edhoc_kdf(PRK_4e3m, <'eight', TH_4>, key_length) in
+    let IV_4 = edhoc_kdf(PRK_3e2m, <'nine', TH_4>, iv_length) in
+    in(m4);
+    let ad_4 = <aead_length, 'empty', TH_4> in
+    let plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4) in
+    let ~EAD_4 = plaintext_4 in
+    let PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, hash_length) in
+    event AcceptI(~cid, method_four, CRED_PSK, PRK_out, G_X, G_Y)
+  )
+)
 
-let I(~cid, ID_CRED_PSK) =
-    in(<method,suitesI,C_I,EAD_1>); // we let the attacker fully control the parameters used by a session
-    event MethodOk(method);         // ???? à définir -- pour vérifier si la méthode porposée est bonne ?
-    new ~X;                         // ephemeral exponent for DH share, it is x in g^x
-    new ~EAD_3;                     // we model the EAD_3 as a fresh name to test later its secrecy
- 
-    new ~psk;                       // This declares a fresh PSK, securely shared between initiator and responder.
-    let CRED_PSK = ~psk in          // CRED_PSK
-    let ID_CRED_PSK = make_id(CRED_PSK) in  
+let R(~cid, ID_CRED_PSK, CRED_PSK) = (
+  in(<C_R,EAD_2,suitesR>);
+  in(<method,suitesI,G_X,C_I,EAD_1>);
+  event MethodOk(method);
+  new ~Y;
+  new ~EAD_4;
+  let G_Y = 'g'^~Y in
+  let G_XY = G_X^~Y in
+  let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
+  let TH_2 = hash(<wrap(G_Y), wrap(TH_1)>) in
+  let PRK_2e = hkdfextract(G_XY, TH_2) in
+  if (method = method_four) then (
+    let plaintext_2 = <C_R, EAD_2> in
+    let KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero', TH_2, plaintext_length>, plaintext_length) in
+    let m2 = <G_Y, encxor(plaintext_2, KEYSTREAM_2)> in
+    out(m2);
+    in(m3);
+    let TH_3 = hash(<wrap(TH_2), plaintext_2, CRED_PSK>) in
+    let PRK_3e2m = PRK_2e in
+    let SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five', TH_3, hash_length>, hash_length) in
+    let PRK_4e3m = hkdfextract(CRED_PSK, SALT_4e3m) in
+    let KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven', TH_3, plaintext_length>, plaintext_length) in
+    let K_3 = edhoc_kdf(PRK_4e3m, <'twelve', TH_3>, key_length) in
+    let IV_3 = edhoc_kdf(PRK_3e2m, <'thisteen', TH_3>, iv_length) in
+    let plaintext_3a = decxor(m3, KEYSTREAM_3) in
+    let <ID_CRED_PSK_in, ciphertext_3b> = plaintext_3a in
+    let ad_3 = <aead_length, 'empty', TH_3> in
+    let plaintext_3b = aeaddec(ciphertext_3b, K_3, IV_3, ad_3) in
+    let <'empty', ID_CRED_PSK_chk, TH_3_chk, CRED_PSK_chk, ~EAD_3> = plaintext_3b in
+    let TH_4 = hash(<wrap(TH_3), ID_CRED_PSK_chk, plaintext_3b, CRED_PSK_chk>) in
+    let K_4 = edhoc_kdf(PRK_4e3m, <'eight', TH_4>, key_length) in
+    let IV_4 = edhoc_kdf(PRK_3e2m, <'nine', TH_4>, iv_length) in
+    let PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, hash_length) in
+    let ad_4 = <aead_length, 'empty', TH_4> in
+    let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
+    out(m4);
+    event AcceptR(~cid, method_four, CRED_PSK, PRK_out, G_Y, G_X)
+  )
+)
 
-    let G_X =  'g'^~X  in           // ephemeral DH share
+process:
+  new ~cid;
+  new ~psk;
+  let CRED_PSK = ~psk in
+  let ID_CRED_PSK = make_id(CRED_PSK) in
+  ( I(~cid, ID_CRED_PSK, CRED_PSK) | R(~cid, ID_CRED_PSK, CRED_PSK) )
 
-    let m1 = <method,suitesI,G_X,C_I,EAD_1> in  // First message of the Initiator
-    out(m1);
-
-    in(m2);                                     // Reception of the second message, coming from the Responder
-    let < G_Y, CIPHERTEXT_2 > = m2 in           // Parse of the second message (remove C_R)
-    let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in 
-    let TH_2 = hash(<wrap(G_Y), wrap(TH_1)>) in // TH_2 = H( G_Y, H(message_1) )
-
-	let G_YX = G_Y^~X in                // ephemeral DH key for the KDF
-
-    let PRK_2e = hkdfextract(G_YX , TH_2) in    // Construction of the first PRK
-    let KEYSTREAM_2 = edhoc_kdf(PRK_2e , <'azero' , TH_2 , plaintext_length> , plaintext_length) in // Construction of the first symmetrical key
-    let plaintext_2 = decxor(CIPHERTEXT_2,KEYSTREAM_2) in                                           // Deciphering of CIPHERTEXT_2
-    let < C_R, EAD_2> = plaintext_2 in
-    
-    if (method = method_four) then 
-    (  
-        // FIXME: the public keys are what in this case? the identifiers?
-        // let pskI = ID_CRED_I in 
-        // let pskR = ID_CRED_R in
-
-	    let PRK_3e2m = PRK_2e in
-        let SALT_3e2m = edhoc_kdf(PRK_2e, <'aone' , TH_2 , hash_length> , hash_length) in  // Computing the first salt
-	    let CTX_2 = <C_R , EAD_2> in
-
-        let TH_3 = hash(<wrap(TH_2) , plaintext_2 , CRED_PSK>) in
-
-        let SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five' , TH_3 , hash_length>, hash_length) in        // Computing the second salt
-		let PRK_4e3m = hkdfextract(CRED_PSK , SALT_4e3m) in
-
-        let KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven' , TH_3 , plaintext_length>, plaintext_length) in // Construction of the first symmetrical key
-        let K_3 = edhoc_kdf(PRK_4e3m, <'twelve',TH_3>, key_length) in
-		let IV_3 = edhoc_kdf(PRK_3e2m, <'thisteen',TH_3>, iv_length) in
-
-        let plaintext_3b = <'empty', ID_CRED_PSK , TH_3 , CRED_PSK, ~EAD_3> in
-        let ad_3 = <aead_length , 'empty' , TH_3> in 
-        let ciphertext_3b = aeadenc(plaintext_3b,K_3,IV_3,ad_3) in
-        let plaintext_3a = <ID_CRED_PSK , ciphertext_3b> in
-
-            
-		let m3 = encxor(plaintext_3a, KEYSTREAM_3) in
-
-		let TH_4 = hash(<wrap(TH_3) , ID_CRED_PSK , plaintext_3b , CRED_PSK>) in
-
-        let K_4 = edhoc_kdf(PRK_4e3m, <'eight',TH_4>, key_length) in
-		let IV_4 = edhoc_kdf(PRK_3e2m, <'nine',TH_4>, iv_length) in
-		out(m3);
-
-        // Add modeling of message 4
-        in(m4);
-        let ad_4 = <aead_length ,  'empty' , TH_4> in
-        let plaintext_4 = aeaddec(m4,K_4,IV_4,ad_4) in                                           // Deciphering of CIPHERTEXT_2
-        let ~EAD_4 = plaintext_4 in
-
-        let PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, hash_length) in
-        0
-    )
-
-
-
-let R(~cid) =                       // Here the Responder does not know yet with who he is going to exchange
-    in(<C_R,EAD_2,suitesR>);                    // Again we let the attacker fully control the parameters used by a session
-    in(<method,suitesI,G_X,C_I,EAD_1>);         // This is the first message, send by the Initiator
-    event MethodOk(method);                     
-    let m1 = <method,suitesI,G_X,C_I,EAD_1> in  // Parsing the first message
-    new ~Y;                                     // Generating the ephemeral DH element y of g^y
-    new ~EAD_4;
-
-    let G_Y =  'g'^~Y  in
-    let G_XY = G_X^~Y in                       // Computing the DH secret key
-
-    new ~psk;                       // This declares a fresh PSK, securely shared between initiator and responder.
-    let CRED_PSK = ~psk in          // CRED_PSK
-    let ID_CRED_PSK = make_id(CRED_PSK) in  
-
-    let TH_1 = hash(<wrap(method) , wrap(suitesI) , wrap(G_X) , wrap(C_I) , EAD_1>) in
-    let TH_2 = hash(<wrap(G_Y) , wrap(TH_1)>) in    
-    let PRK_2e = hkdfextract(G_XY , TH_2) in    // Computing the first PRK
-
-    if (method = method_four) then 
-    (
-        let PRK_3e2m = PRK_2e in
-        let SALT_3e2m = edhoc_kdf(PRK_2e, <'aone' , TH_2 , hash_length>, hash_length) in  // Computing the first salt
-	    
-        let CTX_2 = <C_R , EAD_2> in
-        let KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero' , TH_2 , plaintext_length>, plaintext_length) in // Construction of the first symmetrical key
-        let plaintext_2 = < C_R, EAD_2> in
-	    let m2 = <G_Y , encxor(plaintext_2,KEYSTREAM_2)> in
-        out(m2);	                        // Sending the second 
-
-        in(m3);
-
-        let TH_3 = hash(<wrap(TH_2) , plaintext_2 , CRED_PSK>) in
-
-        let SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five' , TH_3 , hash_length>, hash_length) in        // Computing the second salt
-		let PRK_4e3m = hkdfextract(CRED_PSK , SALT_4e3m) in
-
-        let KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven' , TH_3 , plaintext_length>, plaintext_length) in // Construction of the first symmetrical key
-        let K_3 = edhoc_kdf(PRK_4e3m,<'twelve',TH_3>, key_length) in
-		let IV_3 = edhoc_kdf(PRK_3e2m,<'thisteen',TH_3>, iv_length) in
-
-		let plaintext_3a = decxor(m3, KEYSTREAM_3) in
-        let < ID_CRED_PSK, ciphertext_3b> = plaintext_3a in         // We parse plaintext_3a
-        let ad_3 = <aead_length ,  'empty' , TH_3> in
-		let plaintext_3b =  aeaddec(ciphertext_3b,K_3,IV_3,ad_3) in
-        let <'empty', ID_CRED_PSK , TH_3 , CRED_PSK, ~EAD_3> = plaintext_3b in
-        
-
-		let TH_4 = hash(<wrap(TH_3) ,  ID_CRED_PSK , plaintext_3b , CRED_PSK>) in
-
-        let K_4 = edhoc_kdf(PRK_4e3m,<'eight',TH_4>, key_length) in
-		let IV_4 = edhoc_kdf(PRK_3e2m,<'nine',TH_4>, iv_length) in
-		
-        // Add modeling of message 4
-        let PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, hash_length) in
-        let ad_4 = <aead_length ,  'empty' , TH_4> in
-        let m4 = aeadenc(~EAD_4,K_4,IV_4,ad_4) in
-        out(m4);
-        0
-    )
-
-// Restrictions
-restriction Equality:
-"All x y #i. Eq(x,y) @i ==> x = y"
-
-restriction OnlyOnceRestriction:
-"All I R #i #j. OnlyOnce(I,R) @i & OnlyOnce(I,R) @j ==> #i = #j"
-
-// Security properties
-lemma session_key_secrecy:
-"All I R k #i. 
-    !Sessionkey(I, R, k) @i ==> 
-    not (Ex #j. K(k) @j)"
-
-lemma mutual_authentication:
-"All I R k #i. 
-    Commit(I, R, k) @i ==> 
-    (Ex #j. Running(R, I, k) @j & j < i)"
-
+#include "LakePropertiesPSK.splib"
 
 end

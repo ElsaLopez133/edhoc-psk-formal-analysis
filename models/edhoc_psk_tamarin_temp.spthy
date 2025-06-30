@@ -1,0 +1,273 @@
+/*
+ * Protocol:   EDHOC-PSK
+   https://datatracker.ietf.org/doc/draft-ietf-lake-edhoc-psk/
+
+   A lightweight DH based key exchange, authenticated using Pre-Shared Keys
+*/
+
+theory edhoc
+begin
+
+builtins: diffie-hellman, xor, hashing
+
+functions: method_four/0, length/0,
+           Hash_length/0, edhoc_mac_length/0, key_length/0, iv_length/0, 
+           plaintext_length/0, sign_length/0, aead_length/0,
+           error_code_one/0, error_code_two/0,
+           suitesIConst/0, suitesRConst/0,
+           edhoc_kdf/3,
+           aeadenc/4, aeaddec/4 [destructor],
+           make_id/1,
+           wrap/1,
+           Hkdfextract/2, hkdfexpand/2,
+           pair_fst/1, pair_snd/1
+
+equations:
+    aeaddec(aeadenc(m,ad,k,iv),ad,k,iv) = m,
+    pair_fst(<x,y>) = x,
+    pair_snd(<x,y>) = y,
+
+// Reveal PSK
+rule Reveal_PSK:
+  [ !PSK(I, R, psk) ]
+  --[ RevealPSK(I, R, psk) ]->
+  [ Out(psk) ]
+
+
+// Pre-shared key setup
+rule Setup_PSK:
+    [ Fr(~psk) ]
+    --[ OnlyOnce($I, $R) ]->
+    [ !PSK($I, $R, ~psk) ]
+
+// Initiator process
+rule I_1:
+    [ Fr(~cid) // Connection identifier
+    , Fr(~X) // DH share
+    , Fr(~EAD_3)
+    , !PSK($I, $R, psk)
+    , In(<method, suitesI, C_I, EAD_1>)
+    ]
+    --[ MethodOk(method) ]->
+    [ I_1($I, $R, ~cid, ~X, ~EAD_3, psk, method, suitesI, C_I, EAD_1)
+    , Out(<method, suitesI, 'g'^~X, C_I, EAD_1>)
+    ]
+
+rule I_2:
+    let G_X = 'g'^X 
+        TH_1 = h(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) 
+        TH_2 = h(<wrap(G_Y), wrap(TH_1)>)
+        G_YX = G_Y^X 
+        PRK_2e = Hkdfextract(G_YX, TH_2) 
+        KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero', TH_2, plaintext_length>, plaintext_length) 
+        plaintext_2 = CIPHERTEXT_2 XOR KEYSTREAM_2 
+    in
+    [ I_1(I, R, cid, X, EAD_3, psk, method, suitesI, C_I, EAD_1)
+    , In(<G_Y, CIPHERTEXT_2>)
+    ]
+    --[ Eq(method, method_four)
+      , DH(I, R, G_Y^X), 
+      Running(I, R, <'initiator', psk>)
+      ]->
+    [
+      I_2_state(I, R, cid, X, EAD_3, psk, method, suitesI, C_I, EAD_1, G_Y, TH_2, PRK_2e, plaintext_2, G_X)
+    ]
+
+rule I_3:
+    let C_R = pair_fst(plaintext_2)
+        EAD_2 = pair_snd(plaintext_2)
+        CRED_PSK = psk
+        ID_CRED_PSK = make_id(CRED_PSK) 
+        PRK_3e2m = PRK_2e 
+        TH_3 = h(<wrap(TH_2), plaintext_2, CRED_PSK>) 
+        SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five', TH_3, Hash_length>, Hash_length) 
+        PRK_4e3m = Hkdfextract(CRED_PSK, SALT_4e3m) 
+        KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven', TH_3, plaintext_length>, plaintext_length) 
+        K_3 = edhoc_kdf(PRK_4e3m, <'twelve', TH_3>, key_length) 
+        IV_3 = edhoc_kdf(PRK_3e2m, <'thirteen', TH_3>, iv_length) 
+        plaintext_3b = EAD_3 
+        ad_3 = <aead_length, ID_CRED_PSK, TH_3, CRED_PSK> 
+        ciphertext_3b = aeadenc(plaintext_3b, ad_3, K_3, IV_3) 
+        plaintext_3a = <ID_CRED_PSK, ciphertext_3b> 
+        m3 = plaintext_3a XOR KEYSTREAM_3 
+        TH_4 = h(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_PSK>) 
+        PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, Hash_length) 
+    in
+    [ I_2_state(I, R, cid, X, EAD_3, psk, method, suitesI, C_I, EAD_1, G_Y, TH_2, PRK_2e, plaintext_2, G_X) ]
+    -->
+    [ 
+      I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out, G_X, G_Y, C_I, C_R)
+    , Out(m3)
+    ]
+
+rule I_4:
+    let K_4 = edhoc_kdf(PRK_4e3m, <'eight', TH_4>, key_length) 
+        IV_4 = edhoc_kdf(PRK_3e2m, <'nine', TH_4>, iv_length) 
+        ad_4 = <aead_length, TH_4> 
+        plaintext_4 = aeaddec(m4, ad_4, K_4, IV_4) 
+    in
+    [ I_3_state(I, R, cid, TH_4, PRK_4e3m, PRK_3e2m, PRK_out, G_X, G_Y, C_I, C_R)
+    , In(m4)
+    ]
+    --[ !Sessionkey(I, R, PRK_out)
+      , Commit(I, R, PRK_out, G_X, G_Y, C_I, C_R)
+      ]->
+    [ 
+      !Sessionkey(I, R, PRK_out)
+    ]
+
+// Responder process
+rule R_1:
+    let G_Y = 'g'^~Y 
+        G_XY = G_X^~Y 
+        CRED_PSK = psk 
+        ID_CRED_PSK = make_id(CRED_PSK) 
+        TH_1 = h(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) 
+        TH_2 = h(<wrap(G_Y), wrap(TH_1)>) 
+        PRK_2e = Hkdfextract(G_XY, TH_2) 
+        PRK_3e2m = PRK_2e 
+        plaintext_2 = <C_R, EAD_2> 
+        KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero', TH_2, plaintext_length>, plaintext_length) 
+        m2 = <G_Y, plaintext_2 XOR KEYSTREAM_2> 
+    in
+    [ Fr(~cid)
+    , Fr(~Y)
+    , Fr(~EAD_4)
+    , !PSK($I, $R, psk)
+    , In(<C_R, EAD_2, suitesR>)
+    , In(<method, suitesI, G_X, C_I, EAD_1>)
+    ]
+    --[ MethodOk(method)
+      , Eq(method, method_four)
+      , DH($R, $I, G_X^~Y)
+      ]->
+    [ 
+      R_1_state($R, $I, ~cid, ~Y, ~EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK, G_X, G_Y, C_I, C_R)
+    , Out(m2)
+    ]
+
+rule R_2:
+    let PRK_3e2m = PRK_2e 
+        TH_3 = h(<wrap(TH_2), plaintext_2, CRED_PSK>) 
+        SALT_4e3m = edhoc_kdf(PRK_3e2m, <'five', TH_3, Hash_length>, Hash_length) 
+        PRK_4e3m = Hkdfextract(CRED_PSK, SALT_4e3m) 
+        KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, <'eleven', TH_3, plaintext_length>, plaintext_length) 
+        K_3 = edhoc_kdf(PRK_4e3m, <'twelve', TH_3>, key_length) 
+        IV_3 = edhoc_kdf(PRK_3e2m, <'thirteen', TH_3>, iv_length) 
+        plaintext_3a = m3 XOR KEYSTREAM_3 
+        CIPHERTEXT_3B = pair_snd(plaintext_3a)
+        ad_3 = <aead_length, ID_CRED_PSK, TH_3, CRED_PSK> 
+        plaintext_3b = aeaddec(CIPHERTEXT_3B, ad_3, K_3, IV_3) 
+        TH_4 = h(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_PSK>) 
+        K_4 = edhoc_kdf(PRK_4e3m, <'eight', TH_4>, key_length) 
+        IV_4 = edhoc_kdf(PRK_3e2m, <'nine', TH_4>, iv_length) 
+        ad_4 = <aead_length, TH_4> 
+        m4 = aeadenc(EAD_4, ad_4, K_4, IV_4) 
+        PRK_out = edhoc_kdf(PRK_4e3m, <'seven', TH_4>, Hash_length) 
+    in
+    [
+      R_1_state(R, I, cid, Y, EAD_4, psk, method, TH_2, PRK_2e, plaintext_2, CRED_PSK, ID_CRED_PSK, G_X, G_Y, C_I, C_R),
+      In(m3)
+    ]
+    --[
+      Running(R, I, <'responder', PRK_out, G_X, G_Y, C_I, C_R>),
+      Commit(R, I, PRK_out, G_X, G_Y, C_I, C_R)
+    ]->
+    [
+      !Sessionkey(R, I, PRK_out),
+      Out(m4),
+      Commit(R, I, PRK_out, G_X, G_Y, C_I, C_R)
+    ]
+
+
+
+/* --------- RESTRICTIONS --------- */
+
+restriction Equality:
+    "All x y #i. Eq(x,y) @#i ==> x = y"
+
+// Ensures that only one session per Initiator/Responder pair can be started.
+restriction OnlyOnceRestriction:
+    "All I R #i #j. OnlyOnce(I,R) @#i & OnlyOnce(I,R) @#j ==> #i = #j"
+
+
+/* --------- SANITY CHECKS --------- */
+// To run only the executables: tamarin-prover --prove --lemma=executable* edhoc.spthy
+
+lemma executable_2:
+  "Ex I R k #i. !Sessionkey(I, R, k) @#i"
+
+lemma executable_3:
+  "Ex I R k gx gy ci cr #i. Commit(I, R, k, gx, gy, ci, cr) @#i"
+
+
+/* --------- SECURITY PROPOERTIES --------- */
+
+// To prove a given lemma:  tamarin-prover --prove --lemma=mutual_authentication edhoc_psk_tamarin.spthy
+
+// If a session key was successfully established, then it must not be leaked to the attacker
+lemma session_key_secrecy:
+    "All I R k #i. 
+        !Sessionkey(I, R, k) @#i ==> 
+        not (Ex #j. K(k) @#j)"
+
+lemma forward_secrecy_psk_compromise:
+  "All I R k #i.
+     !Sessionkey(I, R, k) @#i &
+     not (Ex psk #j. RevealPSK(I, R, psk) @#j & #j < #i)
+   ==> not (Ex #j. K(k) @#j)"
+
+// Commit(I, R, k): the Initiator thinks it successfully completed a session with Responder R using key k.
+// Running(R, I, k): the Responder was running a session with Initiator I with key k.
+// j < i: the Responder’s confirmation must happen before the Initiator finalizes.
+lemma mutual_authentication:
+  "All I R k gx gy ci cr #i. 
+      Commit(I, R, k, gx, gy, ci, cr) @#i ==> 
+      (Ex #j. Running(R, I, <'responder', k, gx, gy, ci, cr>) @#j & #j < #i)"
+
+// If roles change
+// If roles change
+lemma mutual_authentication_responder:
+  "All R I k gx gy ci cr #i.
+     Commit(R, I, k, gx, gy, ci, cr) @#i
+   ==> (Ex #j. Running(I, R, <'initiator', k, gx, gy, ci, cr>) @#j & #j < #i)"
+
+
+// This ensures both parties agree on who they're talking to and what key and parameters they are using.
+lemma agreement_on_parameters:
+  "All I R k gx gy ci cr #i.
+      Commit(I, R, k, gx, gy, ci, cr) @#i ==>
+      (Ex #j. Running(R, I, <'responder', k, gx, gy, ci, cr>) @#j & #j < #i)"
+
+
+lemma forward_secrecy:
+  "All I R k #i.
+      !Sessionkey(I, R, k) @#i &
+      not (Ex psk #j. RevealPSK(I, R, psk) @#j & #j < #i)
+   ==> not (Ex #j. K(k) @#j)"
+
+// This states that for each Commit by the Initiator, there is exactly one matching Running by the Responder.
+lemma injective_agreement_initiator:
+  "All I R k gx gy ci cr #i.
+     Commit(I, R, k, gx, gy, ci, cr) @#i
+   ==>
+     (Ex #j. Running(R, I, <'responder', k, gx, gy, ci, cr>) @#j & #j < #i) &
+     (All #i2.
+        Commit(I, R, k, gx, gy, ci, cr) @#i2 ==> #i2 = #i)"
+
+// Identity binding ensures the key is bound to the correct identities of the Initiator and Responder. 
+// That is, if a session key is accepted by one party, it must be tied to the intended peer.
+lemma identity_binding_initiator:
+  "All I R k gx gy ci cr #i.
+     Commit(I, R, k, gx, gy, ci, cr) @#i
+   ==> 
+     (Ex #j. Running(R, I, <'responder', k, gx, gy, ci, cr>) @#j)"
+
+lemma identity_binding_responder:
+  "All R I k gx gy ci cr #i.
+     Commit(R, I, k, gx, gy, ci, cr) @#i
+   ==> 
+     (Ex #j. Running(I, R, <'initiator',  k, gx, gy, ci, cr>) @#j)"  // if you're still using 'psk'
+
+
+end
