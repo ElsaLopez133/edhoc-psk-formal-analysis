@@ -1,0 +1,52 @@
+/*
+ * Minimal EDHOC-PSK Debug Version
+ */
+
+theory edhoc_psk_debug
+
+begin
+
+builtins: diffie-hellman, hashing, xor
+
+functions: method_four/0, 
+           edhoc_kdf/3,
+           aeadenc/4, aeaddec/4 [destructor],
+           make_id/1,
+           wrap/1
+
+equations: aeaddec(aeadenc(m,r,k,ad),r,k,ad) = m
+
+// Basic PSK setup
+rule HonestPSK:
+  [ Fr(~psk) ]
+  -->
+  [ !PSK(~psk) ]
+
+// Minimal initiator start
+rule I_Start:
+  [ Fr(~cid), !PSK(psk) ]
+  --[ Start_I(~cid, psk) ]->
+  [ St_I_Started(~cid, psk) ]
+
+// Minimal responder start  
+rule R_Start:
+  [ Fr(~cid), !PSK(psk) ]
+  --[ Start_R(~cid, psk) ]->
+  [ St_R_Started(~cid, psk) ]
+
+// Test lemmas
+lemma test_initiator_start:
+  exists-trace
+  "Ex cid psk #i. Start_I(cid, psk) @i"
+
+lemma test_responder_start:
+  exists-trace
+  "Ex cid psk #i. Start_R(cid, psk) @i"
+
+lemma test_both_start:
+  exists-trace
+  "Ex cid1 cid2 psk #i #j. 
+    Start_I(cid1, psk) @i & 
+    Start_R(cid2, psk) @j"
+
+end
