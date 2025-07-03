@@ -326,6 +326,28 @@ restriction OnlyMethodFour:
 //      AcceptI(cid1, m, psk, prk, gx1, gy1)@i & AcceptI(cid2, m, psk, prk, gx2, gy2)@j
 //    ==> #i = #j"
 
+// PASSED set -s=20 (psased at s=6)
+// lemma key_agreement_psk:
+//   "All cid1 cid2 m psk prk1 prk2 gx gy #i #j.
+//      AcceptI(cid1, m, psk, prk1, gx, gy)@i &
+//      AcceptR(cid2, m, psk, prk2, gx, gy)@j
+//    ==> prk1 = prk2"
+
+// PASSED
+// lemma pfs_psk:
+//   "All cid m psk prk gx gy #i #j.
+//      AcceptI(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@i
+//    ==> (Ex #t. LeakShare(gx)@t & t < i)
+//     | (Ex #t. LeakShare(gy)@t & t < i)
+//     | (Ex #t. LeakSessionKey(prk)@t)"
+
+// PASSED
+// lemma session_key_secrecy:
+//   "All cid prk #i.
+//     FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
+// lemma psk_secrecy:
+//   "All psk #i #j.
+//     !Honest(psk)@i & K(psk)@j ==> F"
 
 // We omit now to check one by one
 // #include "LakePropertiesPSKTamarin.splib"

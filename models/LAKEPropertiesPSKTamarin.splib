@@ -46,6 +46,7 @@ lemma honestauthIR_psk_non_inj:
    ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, m, psk, prk2, gx2, gy2)@j & j < i & prk = prk2)
     | (Ex #t. LeakShare(gx)@t)"
 
+// injectivity 
 lemma authRI_psk_unique:
   "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
      AcceptR(cid1, m, psk, prk, gx1, gy1)@i & AcceptR(cid2, m, psk, prk, gx2, gy2)@j
@@ -81,6 +82,7 @@ lemma psk_secrecy:
   "All psk #i #j.
     !Honest(psk)@i & K(psk)@j ==> F"
 
+// Strong secrecy of session key if no DH leak
 lemma session_key_secrecy:
   "All cid prk #i.
     FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
