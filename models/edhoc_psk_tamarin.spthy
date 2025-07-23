@@ -405,13 +405,15 @@ restriction OnlyMethodFour:
 //    ==> #i = #j"
 
 // // Key agreement lemma 
-lemma key_agreement_psk:
-  "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy #i #j.
-     AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx, gy)@i &
-     AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, gy)@j
-   ==> prk1 = prk2"
+// PASSED
+// lemma key_agreement_psk:
+//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx, gy)@i &
+//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, gy)@j
+//    ==> prk1 = prk2"
 
 // Perfect Forward Secrecy lemma 
+// PASSED
 // lemma pfs_psk:
 //   "All cid subj_i subj_r prk gx gy #i #j #k.
 //      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
@@ -420,6 +422,7 @@ lemma key_agreement_psk:
 //     | (Ex #t. LeakSessionKey(prk)@t)"
 
 // // Session key secrecy lemma
+// Passed
 // lemma session_key_secrecy:
 //   "All cid prk #i.
 //     FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
@@ -430,14 +433,16 @@ lemma key_agreement_psk:
 //     !Honest(psk)@i & K(psk)@j ==> F"
 
 // // Identity binding lemma - ensures credentials bind to correct subjects
+// PASSED
 // lemma identity_binding:
 //   "All cid subj_i subj_r prk gx gy #i.
 //      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i
-//    ==> (Ex #j. !SubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
+//    ==> (Ex #j. ExposeSubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
 
 // // Additional identity-specific lemmas
 
 // // Subject identity consistency - if two sessions have same subjects, they should use same PSK
+// PASSED
 // lemma subject_psk_consistency:
 //   "All cid1 cid2 subj_i subj_r prk1 prk2 gx1 gy1 gx2 gy2 #i #j.
 //      AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx1, gy1)@i &
@@ -445,6 +450,7 @@ lemma key_agreement_psk:
 //    ==> prk1 = prk2"
 
 // // Subject authenticity - responder knows initiator's real identity
+// PASSED
 // lemma subject_authenticity_R:
 //   "All cid subj_i subj_r prk gx gy #i #j #k.
 //      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 
@@ -452,7 +458,8 @@ lemma key_agreement_psk:
 //    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t)
 //     | (Ex #t. LeakShare(gy)@t)"
 
-// // Subject authenticity - initiator knows responder's real identity  
+// // Subject authenticity - initiator knows responder's real identity 
+// FALSIFIED 
 // lemma subject_authenticity_I:
 //   "All cid subj_i subj_r prk gx gy #i #j #k.
 //      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 

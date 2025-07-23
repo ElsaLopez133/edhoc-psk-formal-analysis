@@ -78,12 +78,14 @@ lemma authIR_psk_unique:
 // ************** Key Agreement  ************************************
 // ******************************************************************
 
+// PASSED
 lemma key_agreement_psk:
   "All cid1 cid2 m psk prk1 prk2 gx gy #i #j.
      AcceptI(cid1, m, psk, prk1, gx, gy)@i &
      AcceptR(cid2, m, psk, prk2, gx, gy)@j
    ==> prk1 = prk2"
 
+// PASSED
 lemma pfs_psk:
   "All cid subj_i subj_r prk gx gy #i #j #k.
      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
@@ -125,7 +127,24 @@ lemma honest_agents_agree:
 // ************** Identity binding***********************************
 // ******************************************************************
 
+// PASSED
 lemma identity_binding:
   "All cid subj_i subj_r prk gx gy #i.
      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i
-   ==> (Ex #j. !SubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
+   ==> (Ex #j. ExposeSubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
+
+// Subject authenticity - responder knows initiator's real identity
+lemma subject_authenticity_R:
+  "All cid subj_i subj_r prk gx gy #i #j #k.
+     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 
+     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t)
+    | (Ex #t. LeakShare(gy)@t)"
+
+// Subject authenticity - initiator knows responder's real identity  
+lemma subject_authenticity_I:
+  "All cid subj_i subj_r prk gx gy #i #j #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 
+     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t)
+    | (Ex #t. LeakShare(gx)@t)"
