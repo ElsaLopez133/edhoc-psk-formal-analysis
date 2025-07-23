@@ -1,9 +1,8 @@
 /*
- * Protocol:   EDHOC-PSK
-   https://datatracker.ietf.org/doc/draft-ietf-lake-edhoc-psk/
-
-   A lightweight DH-based key exchange, authenticated using Pre-Shared Keys
-*/
+ * Protocol:   EDHOC-PSK with proper credential modeling
+ * 
+ * Credentials contain subject identity information and reference the PSK
+ */
 
 theory edhoc_psk_tamarin
 
@@ -20,6 +19,10 @@ functions: method_four/0, length/0,
            make_id/1,
            wrap/1,
            hash/1, hkdfextract/2, hkdfexpand/2,
+           // Credential modeling functions
+           make_cred/2,        // make_cred(subject_id, psk) -> credential
+           get_subject/1,      // get_subject(credential) -> subject_id  
+           get_psk/1,          // get_psk(credential) -> psk
            // Helper functions for tuple destructuring
            get_first/1, get_second/1, get_third/1, get_fourth/1, get_fifth/1
 
@@ -28,9 +31,44 @@ equations: aeaddec(aeadenc(m,k,r,ad),k,r,ad) = m,
            get_second(<a,b,c,d,e>) = b,
            get_third(<a,b,c,d,e>) = c,
            get_fourth(<a,b,c,d,e>) = d,
-           get_fifth(<a,b,c,d,e>) = e
+           get_fifth(<a,b,c,d,e>) = e,
+           // Credential equations
+           get_subject(make_cred(subject, psk)) = subject,
+           get_psk(make_cred(subject, psk)) = psk
 
-// Setup rules for generating fresh values
+// Adversary can leak DH shares
+rule LeakShare:
+  [ !DHExp(~x) ]
+  --[ LeakShare('g'^~x) ]->
+  [ Out(~x) ]
+
+// Adversary can leak session keys
+rule LeakSessionKey:
+  [ !SessionKey(k) ]
+  --[ LeakSessionKey(k) ]->
+  [ Out(k) ]
+
+// Adversary can leak PSKs (but not if honest)
+rule LeakPSK:
+  [ !PSK(psk) ]
+  --[ LeakPSK(psk) ]->
+  [ Out(psk) ]
+
+// Setup rules for generating fresh values and credentials
+rule HonestPSK:
+  [ Fr(~psk), Fr(~subject_i), Fr(~subject_r) ]
+  --[ ExposeSubjectI(~subject_i), ExposeSubjectR(~subject_r), ExposeHonest(~psk) ]->
+  [ 
+    !Honest(~psk), 
+    !PSK(~psk),
+    !CredI(make_cred(~subject_i, ~psk)),  // Initiator's credential
+    !CredR(make_cred(~subject_r, ~psk)),  // Responder's credential
+    !SubjectI(~subject_i),                // Initiator's identity
+    !SubjectR(~subject_r)                 // Responder's identity
+    // !CredSubjectI(make_cred(~subject_i, ~psk), ~subject_i),  // Connection fact
+    // !CredSubjectR(make_cred(~subject_r, ~psk), ~subject_r)   // Connection fact
+  ]
+
 rule DriverI:
   let method = method_four in
   [ Fr(~C_I), Fr(~EAD_1), Fr(~suitesI) ]
@@ -42,24 +80,32 @@ rule DriverR:
   -->
   [ ResponderParams(~C_R, ~EAD_2, ~suitesR) ]
 
-rule HonestPSK:
-  [ Fr(~psk) ]
-  -->
-  [ !Honest(~psk), !PSK(~psk) ]
-
 rule SessionStart:
+  let
+    subject_i = get_subject(cred_i)
+    subject_r = get_subject(cred_r)
+  in
   [ 
     InitiatorParams(method, suitesI, C_I, EAD_1),
     ResponderParams(C_R, EAD_2, suitesR),
-    !PSK(psk)
+    !PSK(psk),
+    !Honest(psk),
+    !CredI(cred_i),
+    !CredR(cred_r),
+    !SubjectI(subject_i),  
+    !SubjectR(subject_r) 
   ]
-  -->
+  --[ 
+    // Ensure credentials use the same PSK
+    Eq(get_psk(cred_i), psk),
+    Eq(get_psk(cred_r), psk)
+  ]->
   [
-    // Added ! so that the StartSession is not consumed and can be reused
-    !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk)
+    !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk, cred_i, cred_r)
   ]
 
-// INITIATOR RULES
+
+// INITIATOR'S RULES
 
 rule I_1_SendMessage1:
   let 
@@ -67,19 +113,19 @@ rule I_1_SendMessage1:
     m1 = <method, suitesI, G_X, C_I, EAD_1>
   in
   [
-    // InitiatorParams(method, suitesI, C_I, EAD_1),
-    // !PSK(psk)
-    !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk),
+    !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk, cred_i, cred_r),
     Fr(~X),
     Fr(~EAD_3),
-    Fr(~cid),
+    Fr(~cid)
   ]
   --[ 
     MethodOk(method),
-    Start_I(~cid, method, psk)
+    Start_I(~cid, method, psk, get_subject(cred_i)),
+    !Honest(psk)
   ]->
   [
-    St_I_1(~cid, method, suitesI, C_I, EAD_1, ~X, G_X, ~EAD_3, psk),
+    St_I_1(~cid, method, suitesI, C_I, EAD_1, ~X, G_X, ~EAD_3, psk, cred_i, cred_r),
+    !DHExp(~X),
     Out(m1)
   ]
 
@@ -89,74 +135,82 @@ rule I_2_ReceiveMessage2:
     TH_2 = hash(<wrap(G_Y), wrap(TH_1)>)
     G_YX = G_Y^X
     PRK_2e = hkdfextract(G_YX, TH_2)
-    // KEYSTREAM_2 = edhoc_kdf(PRK_2e, <'azero', TH_2, plaintext_length>, plaintext_length)
-    KEYSTREAM_2 = edhoc_kdf(PRK_2e, 'azero', TH_2, plaintext_length)
-    plaintext_2 = CIPHERTEXT_2 XOR KEYSTREAM_2
+    KEYSTREAM_2A = edhoc_kdf(PRK_2e, 'azero', TH_2, plaintext_length)
+    plaintext_2 = CIPHERTEXT_2 XOR KEYSTREAM_2A
   in
   [
-    St_I_1(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk),
+    St_I_1(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk, cred_i, cred_r),
     In(<G_Y, CIPHERTEXT_2>)
   ]
   -->
   [
-    St_I_2(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk, G_Y, TH_2, PRK_2e, plaintext_2)
+    St_I_2(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk, cred_i, cred_r, G_Y, TH_2, PRK_2e, plaintext_2)
   ]
 
 rule I_3_SendMessage3:
   let
-    CRED_PSK = psk
-    ID_CRED_PSK = make_id(CRED_PSK)
+    CRED_I = cred_i
+    CRED_R = cred_r
+    subject_i = get_subject(CRED_I)
+    subject_r = get_subject(CRED_R)
+    psk_from_cred = get_psk(CRED_I)  // Extract PSK from credential
+    ID_CRED_PSK = make_id(CRED_I)
     PRK_3e2m = PRK_2e
-    TH_3 = hash(<wrap(TH_2), plaintext_2, CRED_PSK>)
+    TH_3 = hash(<wrap(TH_2), plaintext_2>)
     SALT_4e3m = edhoc_kdf(PRK_3e2m, 'five', TH_3, hash_length)
-    PRK_4e3m = hkdfextract(CRED_PSK, SALT_4e3m)
-    KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, 'eleven', TH_3, plaintext_length)
+    PRK_4e3m = hkdfextract(psk_from_cred, SALT_4e3m)  // Use PSK from credential
+    KEYSTREAM_3A = edhoc_kdf(PRK_3e2m, 'eleven', TH_3, plaintext_length)
     K_3 = edhoc_kdf(PRK_4e3m, 'twelve', TH_3, key_length)
     IV_3 = edhoc_kdf(PRK_3e2m, 'thirteen', TH_3, iv_length)
 
-    // plaintext_3b = <'empty', ID_CRED_PSK, TH_3, CRED_PSK, EAD_3>
-    // ad_3 = <aead_length, 'empty', <ID_CRED_PSK, TH_3, CRED_PSK>>
-    external_aad_3 = <ID_CRED_PSK, TH_3, CRED_PSK>
+    external_aad_3 = <ID_CRED_PSK, TH_3, CRED_I, CRED_R>
     ad_3 = <'Encrypt0', 'empty', external_aad_3> 
     plaintext_3b = <EAD_3>
     ciphertext_3b = aeadenc(plaintext_3b, K_3, IV_3, ad_3)
     plaintext_3a = <ID_CRED_PSK, ciphertext_3b>
-    m3 = plaintext_3a XOR KEYSTREAM_3
+    m3 = plaintext_3a XOR KEYSTREAM_3A
   in
   [
-    St_I_2(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk, G_Y, TH_2, PRK_2e, plaintext_2)
+    St_I_2(cid, method, suitesI, C_I, EAD_1, X, G_X, EAD_3, psk, cred_i, cred_r, G_Y, TH_2, PRK_2e, plaintext_2)
   ]
-  --[ Eq(method, method_four) ]->
+  --[ 
+    Eq(method, method_four),
+    Eq(psk_from_cred, psk)  // Ensure PSK consistency
+  ]->
   [
-    St_I_3(cid, method, X, G_X, G_Y, EAD_3, psk, TH_3, PRK_4e3m, PRK_3e2m, ID_CRED_PSK, plaintext_3b),
+    St_I_3(cid, method, X, G_X, G_Y, EAD_3, psk, cred_i, cred_r, TH_3, PRK_4e3m, PRK_3e2m, ID_CRED_PSK, plaintext_3b),
     Out(m3)
   ]
 
 rule I_4_ReceiveMessage4:
   let
-    CRED_PSK = psk
-    TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_PSK>)
+    CRED_I = cred_i
+    CRED_R = cred_r
+    subject_i = get_subject(CRED_I)
+    subject_r = get_subject(CRED_R)
+    TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_I, CRED_R>)
     K_4 = edhoc_kdf(PRK_4e3m, 'eight', TH_4, key_length)
     IV_4 = edhoc_kdf(PRK_3e2m, 'nine', TH_4, iv_length)
     external_aad_4 = <TH_4>
-    // ad_4 = <aead_length, 'empty', TH_4>
     ad_4 = <'Encrypt0', 'empty', external_aad_4>
     plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4)
     EAD_4 = plaintext_4
     PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length)
   in
   [
-    St_I_3(cid, method, X, G_X, G_Y, EAD_3, psk, TH_3, PRK_4e3m, PRK_3e2m, ID_CRED_PSK, plaintext_3b),
-    In(m4)
+    St_I_3(cid, method, X, G_X, G_Y, EAD_3, psk, cred_i, cred_r, TH_3, PRK_4e3m, PRK_3e2m, ID_CRED_PSK, plaintext_3b),
+    In(m4),
+    // !CredSubjectI(cred_i, subject_i),  // Use connection fact
+    // !CredSubjectR(cred_r, subject_r)   // Use connection fact
+    !SubjectI(subject_i) 
   ]
   --[ 
-    AcceptI(cid, method_four, CRED_PSK, PRK_out, G_X, G_Y),
-    // SecretsI(cid,method_four,PRK_2e,PRK_3e2m,PRK_4e3m,PRK_out,KEYSTREAM_2,K_3,IV_3,X,G_Y),
-    // AcceptIData(PRK_out,method_four,X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3>),
-    FinishI(cid, PRK_out)
+    AcceptI(cid, method_four, subject_i, subject_r, PRK_out, G_X, G_Y),
+    FinishI(cid, PRK_out),
   ]->
   [
-    St_I_Final(cid, PRK_out)
+    St_I_Final(cid, PRK_out),
+    !SessionKey(PRK_out)
   ]
 
 // RESPONDER RULES
@@ -165,23 +219,22 @@ rule R_1_ReceiveMessage1:
   let
     TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>)
     m1 = <method,suitesI,G_X,C_I,EAD_1>
-    in
+  in
   [
-    ResponderParams(C_R, EAD_2, suitesR),
-    // !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk),
+    !StartSession(method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, psk, cred_i, cred_r),
     Fr(~Y),
     Fr(~EAD_4),
     Fr(~cid),
-    !PSK(psk),
-    // In(<method, suitesI, G_X, C_I, EAD_1>),
     In(m1)
   ]
   --[
     MethodOk(method),
-    Start_R(~cid, method, psk)
+    Start_R(~cid, method, psk, get_subject(cred_r)),
+    !Honest(psk)
   ]->
   [
-    St_R_1(~cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, ~Y, G_X, TH_1, ~EAD_4, psk)
+    St_R_1(~cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, ~Y, G_X, TH_1, ~EAD_4, psk, cred_i, cred_r),
+    !DHExp(~Y)
   ]
 
 rule R_2_SendMessage2:
@@ -196,52 +249,60 @@ rule R_2_SendMessage2:
     m2 = <G_Y, CIPHERTEXT_2>
   in
   [
-    St_R_1(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, Y, G_X, TH_1, EAD_4, psk)
+    St_R_1(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, suitesR, Y, G_X, TH_1, EAD_4, psk, cred_i, cred_r)
   ]
   -->
   [
-    St_R_2(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, Y, G_Y, G_X, TH_2, PRK_2e, EAD_4, psk),
+    St_R_2(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, Y, G_Y, G_X, TH_2, PRK_2e, EAD_4, psk, cred_i, cred_r),
     Out(m2)
   ]
 
 rule R_3_ReceiveMessage3:
   let
-    CRED_PSK = psk
-    ID_CRED_PSK = make_id(CRED_PSK)
+    CRED_R = cred_r
+    CRED_I = cred_i
+    subject_r = get_subject(CRED_R)
+    subject_i = get_subject(CRED_I)
+    psk_from_cred = get_psk(CRED_R)
+    ID_CRED_PSK = make_id(CRED_R)
     PRK_3e2m = PRK_2e
-    TH_3 = hash(<wrap(TH_2), <C_R, EAD_2>, CRED_PSK>)
-    KEYSTREAM_3 = edhoc_kdf(PRK_3e2m, 'eleven', TH_3, plaintext_length)
-    plaintext_3a = m3 XOR KEYSTREAM_3
+    TH_3 = hash(<wrap(TH_2), <C_R, EAD_2>>)
+    KEYSTREAM_3A = edhoc_kdf(PRK_3e2m, 'eleven', TH_3, plaintext_length)
+    plaintext_3a = m3 XOR KEYSTREAM_3A
     SALT_4e3m = edhoc_kdf(PRK_3e2m, 'five', TH_3, hash_length)
-    PRK_4e3m = hkdfextract(CRED_PSK, SALT_4e3m)
+    PRK_4e3m = hkdfextract(psk_from_cred, SALT_4e3m)  // Use PSK from credential
     K_3 = edhoc_kdf(PRK_4e3m, 'twelve', TH_3, key_length)
     IV_3 = edhoc_kdf(PRK_3e2m, 'thirteen', TH_3, iv_length)
-    // external_aad_3 = <ID_CRED_PSK, TH_3, CRED_PSK>
-    // ad_3 = <'Encrypt0', 'empty', external_aad_3>
   in
   [
-    St_R_2(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, Y, G_Y, G_X, TH_2, PRK_2e, EAD_4, psk),
+    St_R_2(cid, method, suitesI, C_I, EAD_1, C_R, EAD_2, Y, G_Y, G_X, TH_2, PRK_2e, EAD_4, psk, cred_i, cred_r),
     In(m3)
   ]
-  --[ Eq(method, method_four) ]->
+  --[ 
+    Eq(method, method_four),
+    Eq(psk_from_cred, psk)  // Ensure PSK consistency
+  ]->
   [
-    St_R_3(cid, method, C_R, EAD_2, Y, G_Y, G_X, TH_3, PRK_4e3m, PRK_3e2m, EAD_4, psk, plaintext_3a, K_3, IV_3)
+    St_R_3(cid, method, C_R, EAD_2, Y, G_Y, G_X, TH_3, PRK_4e3m, PRK_3e2m, EAD_4, psk, cred_i, cred_r, plaintext_3a, K_3, IV_3)
   ]
 
 rule R_4_SendMessage4:
   let
-    CRED_PSK = psk
-    ID_CRED_PSK = make_id(CRED_PSK)
+    CRED_R = cred_r
+    CRED_I = cred_i
+    subject_r = get_subject(CRED_R)
+    subject_i = get_subject(CRED_I)
+    ID_CRED_PSK = make_id(CRED_R)
     // Decrypt and verify message 3
     ID_CRED_PSK_recv = fst(plaintext_3a)
     ciphertext_3b = snd(plaintext_3a)
-    external_aad_3 = <ID_CRED_PSK_recv, TH_3, CRED_PSK>
+    external_aad_3 = <ID_CRED_PSK_recv, TH_3, CRED_I, CRED_R>
     ad_3 = <'Encrypt0', 'empty', external_aad_3>
     plaintext_3b = aeaddec(ciphertext_3b, K_3, IV_3, ad_3)
     EAD_3 = aeaddec(ciphertext_3b, K_3, IV_3, ad_3)
     
     // Compute message 4
-    TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_PSK>)
+    TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_I, CRED_R>)
     K_4 = edhoc_kdf(PRK_4e3m, 'eight', TH_4, key_length)
     IV_4 = edhoc_kdf(PRK_3e2m, 'nine', TH_4, iv_length)
     external_aad_4 = <TH_4>
@@ -251,15 +312,18 @@ rule R_4_SendMessage4:
     PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length)
   in
   [
-    St_R_3(cid, method, C_R, EAD_2, Y, G_Y, G_X, TH_3, PRK_4e3m, PRK_3e2m, EAD_4, psk, plaintext_3a, K_3, IV_3)
+    St_R_3(cid, method, C_R, EAD_2, Y, G_Y, G_X, TH_3, PRK_4e3m, PRK_3e2m, EAD_4, psk, cred_i, cred_r, plaintext_3a, K_3, IV_3),
+    !SubjectR(subject_r)
+
   ]
   --[
     Eq(ID_CRED_PSK_recv, ID_CRED_PSK),
-    AcceptR(cid, method_four, CRED_PSK, PRK_out, G_X, G_Y),
-    FinishR(cid, PRK_out)
+    AcceptR(cid, method_four, subject_i, subject_r, PRK_out, G_X, G_Y),
+    FinishR(cid, PRK_out),
   ]->
   [
     St_R_Final(cid, PRK_out),
+    !SessionKey(PRK_out),
     Out(m4)
   ]
 
@@ -270,86 +334,130 @@ restriction Equality:
 restriction OnlyMethodFour:
   "All method #i. MethodOk(method) @i ==> method = method_four"
 
+// SECURITY LEMMAS
+
+// // PASSED
 // Simple execution lemmas for testing
-// PASSED
+// tamarin-prover --prove=exec* edhoc_psk_tamarin.spthy --derivcheck-timeout=0 -s=10
+
 // lemma executableI_simple:
 //   exists-trace
-//   "Ex cid method psk #i. Start_I(cid, method, psk) @i"
+//   "Ex cid method psk subj_i #i. Start_I(cid, method, psk, subj_i) @i"
 
 // lemma executableR_simple:
 //   exists-trace
-//   "Ex cid method psk #i. Start_R(cid, method, psk) @i"
+//   "Ex cid method psk subj_r #i. Start_R(cid, method, psk, subj_r) @i"
 
 // lemma executable_full_protocol:
 //   exists-trace
-//   "Ex cid1 cid2 psk prk1 prk2 gx gy #i #j.
+//   "Ex cid1 cid2 prk1 prk2 #i #j.
 //     FinishI(cid1, prk1) @i &
 //     FinishR(cid2, prk2) @j &
 //     prk1 = prk2"
 
-// PASSED
+// lemma honest_setup_executable:
+//   exists-trace
+//   "Ex psk subj_i subj_r #i.
+//      ExposeSubjectR(subj_r)@i & ExposeSubjectI(subj_i)@i & ExposeHonest(psk)@i"
+
+
+// // Session key secrecy lemmas
+// // PASSED
 // lemma secretR_psk:
-//   "All cid m psk prk gx gy #i #j #k.
-//      AcceptR(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@k
+//   "All cid subj_i subj_r prk gx gy #i #j #k.
+//      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectR(subj_r)@k
 //    ==> (Ex #t. LeakSessionKey(prk)@t) 
 //     | (Ex #t. LeakShare(gy)@t)
 //     | (Ex #t. LeakShare(gx)@t)"
 
 // lemma secretI_psk:
-//   "All cid m psk prk gx gy #i #j #k.
-//      AcceptI(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@k
+//   "All cid subj_i subj_r prk gx gy #i #j #k.
+//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
 //    ==> (Ex #t. LeakSessionKey(prk)@t)
 //     | (Ex #t. LeakShare(gx)@t)
 //     | (Ex #t. LeakShare(gy)@t)"
 
-// PASSED
+// // Authentication lemmas
+// // PASSED
 // lemma honestauthRI_psk_non_inj:
-//   "All cid m psk prk gx gy #i #k.
-//      AcceptR(cid, m, psk, prk, gx, gy)@i & !Honest(psk)@k
-//    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, m, psk, prk2, gx2, gy2)@t & t < i & prk = prk2)
+//   "All cid subj_i subj_r prk gx gy #i #k.
+//      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectI(subj_i)@k
+//    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t & t < i & prk = prk2)
 //     | (Ex #t. LeakShare(gy)@t)"
 
+// // FALSIFIFED: found-trace
 // lemma honestauthIR_psk_non_inj:
-//   "All cid m psk prk gx gy #i #k.
-//      AcceptI(cid, m, psk, prk, gx, gy)@i & !Honest(psk)@k
-//    ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, m, psk, prk2, gx2, gy2)@j & j < i & prk = prk2)
+//   "All cid subj_i subj_r prk gx gy #i #k.
+//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectR(subj_r)@k
+//    ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j & j < i & prk = prk2)
 //     | (Ex #t. LeakShare(gx)@t)"
 
-// PASSED
+// // Uniqueness lemmas
+// // PAASED
 // lemma authRI_psk_unique:
-//   "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
-//      AcceptR(cid1, m, psk, prk, gx1, gy1)@i & AcceptR(cid2, m, psk, prk, gx2, gy2)@j
+//   "All cid1 cid2 subj_i subj_r prk gx1 gy1 gx2 gy2 #i #j.
+//      AcceptR(cid1, method_four, subj_i, subj_r, prk, gx1, gy1)@i & AcceptR(cid2, method_four, subj_i, subj_r, prk, gx2, gy2)@j
 //    ==> #i = #j"
 
 // lemma authIR_psk_unique:
-//   "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
-//      AcceptI(cid1, m, psk, prk, gx1, gy1)@i & AcceptI(cid2, m, psk, prk, gx2, gy2)@j
+//   "All cid1 cid2 subj_i subj_r prk gx1 gy1 gx2 gy2 #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk, gx1, gy1)@i & AcceptI(cid2, method_four, subj_i, subj_r, prk, gx2, gy2)@j
 //    ==> #i = #j"
 
-// PASSED set -s=20 (psased at s=6)
-// lemma key_agreement_psk:
-//   "All cid1 cid2 m psk prk1 prk2 gx gy #i #j.
-//      AcceptI(cid1, m, psk, prk1, gx, gy)@i &
-//      AcceptR(cid2, m, psk, prk2, gx, gy)@j
-//    ==> prk1 = prk2"
+// // Key agreement lemma 
+lemma key_agreement_psk:
+  "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy #i #j.
+     AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx, gy)@i &
+     AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, gy)@j
+   ==> prk1 = prk2"
 
-// PASSED
+// Perfect Forward Secrecy lemma 
 // lemma pfs_psk:
-//   "All cid m psk prk gx gy #i #j.
-//      AcceptI(cid, m, psk, prk, gx, gy)@i & K(prk)@j & !Honest(psk)@i
+//   "All cid subj_i subj_r prk gx gy #i #j #k.
+//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
 //    ==> (Ex #t. LeakShare(gx)@t & t < i)
 //     | (Ex #t. LeakShare(gy)@t & t < i)
 //     | (Ex #t. LeakSessionKey(prk)@t)"
 
-// PASSED
+// // Session key secrecy lemma
 // lemma session_key_secrecy:
 //   "All cid prk #i.
 //     FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
+
+// // PSK secrecy lemma - PSK should not be leaked if honest
 // lemma psk_secrecy:
 //   "All psk #i #j.
 //     !Honest(psk)@i & K(psk)@j ==> F"
 
-// We omit now to check one by one
-// #include "LakePropertiesPSKTamarin.splib"
+// // Identity binding lemma - ensures credentials bind to correct subjects
+// lemma identity_binding:
+//   "All cid subj_i subj_r prk gx gy #i.
+//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i
+//    ==> (Ex #j. !SubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
+
+// // Additional identity-specific lemmas
+
+// // Subject identity consistency - if two sessions have same subjects, they should use same PSK
+// lemma subject_psk_consistency:
+//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx1 gy1 gx2 gy2 #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx1, gy1)@i &
+//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j
+//    ==> prk1 = prk2"
+
+// // Subject authenticity - responder knows initiator's real identity
+// lemma subject_authenticity_R:
+//   "All cid subj_i subj_r prk gx gy #i #j #k.
+//      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 
+//      ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+//    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t)
+//     | (Ex #t. LeakShare(gy)@t)"
+
+// // Subject authenticity - initiator knows responder's real identity  
+// lemma subject_authenticity_I:
+//   "All cid subj_i subj_r prk gx gy #i #j #k.
+//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & 
+//      ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+//    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t)
+//     | (Ex #t. LeakShare(gx)@t)"
 
 end
