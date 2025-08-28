@@ -1,0 +1,258 @@
+const g:bitstring.
+free att:channel.
+free sEncrypt0:bitstring.
+free sazero:bitstring.
+free seight:bitstring.
+free seleven:bitstring.
+free sempty:bitstring.
+free sfive:bitstring.
+free snine:bitstring.
+free snull:bitstring.
+free sseven:bitstring.
+free sthirteen:bitstring.
+free stwelve:bitstring.
+free stzero:bitstring.
+fun aead_length():bitstring.
+fun aeadenc(bitstring,bitstring,bitstring,bitstring):bitstring.
+fun const_cred():bitstring.
+fun const_grp():bitstring.
+fun edhoc_kdf(bitstring,bitstring,bitstring,bitstring):bitstring.
+fun edhoc_mac_length():bitstring.
+fun encxor(bitstring,bitstring):bitstring.
+fun error_code_one():bitstring.
+fun error_code_two():bitstring.
+fun exp(bitstring,bitstring):bitstring.
+fun fst(bitstring):bitstring.
+fun h(bitstring):bitstring.
+fun hash(bitstring):bitstring.
+fun hash_length():bitstring.
+fun hkdfexpand(bitstring,bitstring):bitstring.
+fun hkdfextract(bitstring,bitstring):bitstring.
+fun iv_length():bitstring.
+fun key_length():bitstring.
+fun length():bitstring.
+fun make_id(bitstring):bitstring.
+fun method_four():bitstring.
+fun pair(bitstring,bitstring):bitstring.
+fun plaintext_length():bitstring.
+fun sign_length():bitstring.
+fun snd(bitstring):bitstring.
+fun suitesIConst():bitstring.
+fun suitesRConst():bitstring.
+fun wrap(bitstring):bitstring.
+fun xor(bitstring,bitstring):bitstring.
+fun zero():bitstring.
+event eAcceptI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eAcceptR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eCompromiseShare(bitstring).
+event eDerivedIShared(bitstring).
+event eDerivedRShared(bitstring).
+event eLeakSessionKey(bitstring).
+event eLeakShare(bitstring).
+event eMethodOk(bitstring).
+event eShare(bitstring).
+event eStart_I(bitstring,bitstring,bitstring).
+event eStart_R(bitstring,bitstring,bitstring).
+event eTHIShared(bitstring).
+event eTHRShared(bitstring).
+equation forall a:bitstring,b:bitstring; exp( exp(g,a),b) = exp(exp(g,b),a).
+equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
+equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
+reduc forall ad:bitstring, iv:bitstring, k:bitstring, m:bitstring;   aeaddec(aeadenc(m, k, iv, ad), k, iv, ad) = m.
+reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
+reduc forall m:bitstring, x:bitstring;   decxor(encxor(m, x), x) = m.
+reduc forall x:bitstring;   check_cred(x) = const_cred.
+reduc forall x:bitstring;   check_grp(x) = const_grp.
+(*executableI_simple*)
+query cid:bitstring, method:bitstring, psk:bitstring, i:time;
+ event(eStart_I( cid, method, psk ))@i
+.
+(*executableR_simple*)
+query cid:bitstring, method:bitstring, psk:bitstring, i:time;
+ event(eStart_R( cid, method, psk ))@i
+.
+let CompromiseShare(s_2:bitstring)=
+    event eLeakShare( snull ).
+let leakSKey(key_2:bitstring)=
+    event eLeakSessionKey( snull ).
+let I(cid_2:bitstring, ID_CRED_PSK_2:bitstring, CRED_PSK_2:bitstring)=
+    in(att,(method_2:bitstring, (suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring))));
+    event eStart_I( cid_2, method_2, CRED_PSK_2 );
+    event eMethodOk( method_2 );
+    new X_2:bitstring;
+    new EAD_3_2:bitstring;
+    event eShare( X_2 );
+    event eCompromiseShare( X_2 );
+    let G_X_2:bitstring=exp(g, X_2) in
+    let m1_2:bitstring=(method_2, (suitesI_2, (G_X_2, (C_I_2, EAD_1_2)))) in
+    out(att,m1_2);
+    in(att,m2_2:bitstring);
+    let (G_Y_2:bitstring, CIPHERTEXT_2_2:bitstring)=m2_2 in
+    let TH_1_2:bitstring=hash((wrap(method_2), (wrap(suitesI_2), (wrap(G_X_2), (wrap(C_I_2), EAD_1_2))))) in
+    let TH_2_2:bitstring=hash((wrap(G_Y_2), wrap(TH_1_2))) in
+    let G_YX_2:bitstring=exp(G_Y_2, X_2) in
+    let PRK_2e_2:bitstring=hkdfextract(G_YX_2, TH_2_2) in
+    let KEYSTREAM_2_2:bitstring=edhoc_kdf(PRK_2e_2, stzero, TH_2_2,
+                                          plaintext_length) in
+    let plaintext_2_2:bitstring=decxor(CIPHERTEXT_2_2, KEYSTREAM_2_2) in
+    let (C_R_2:bitstring, EAD_2_2:bitstring)=plaintext_2_2 in
+    if method_2 = method_four then
+        (let PRK_3e2m_2:bitstring=PRK_2e_2 in
+         event eDerivedIShared( G_YX_2 );
+         let TH_3_2:bitstring=hash((wrap(TH_2_2), plaintext_2_2)) in
+         event eTHIShared( TH_3_2 );
+         let SALT_4e3m_2:bitstring=edhoc_kdf(PRK_3e2m_2, sfive, TH_3_2,
+                                             hash_length) in
+         let PRK_4e3m_2:bitstring=hkdfextract(CRED_PSK_2, SALT_4e3m_2) in
+         let KEYSTREAM_3_2:bitstring=edhoc_kdf(PRK_3e2m_2, seleven, TH_3_2,
+                                               plaintext_length) in
+         let K_3_2:bitstring=edhoc_kdf(PRK_4e3m_2, stwelve, TH_3_2, key_length) in
+         let IV_3_2:bitstring=edhoc_kdf(PRK_3e2m_2, sthirteen, TH_3_2,
+                                        iv_length) in
+         let external_aad_3_2:bitstring=(ID_CRED_PSK_2, (TH_3_2, CRED_PSK_2)) in
+         let ad_3_2:bitstring=(sEncrypt0, (sempty, external_aad_3_2)) in
+         let plaintext_3b_2:bitstring=EAD_3_2 in
+         let ciphertext_3b_2:bitstring=aeadenc(plaintext_3b_2, K_3_2, IV_3_2,
+                                               ad_3_2) in
+         let plaintext_3a_2:bitstring=(ID_CRED_PSK_2, ciphertext_3b_2) in
+         let m3_2:bitstring=encxor(plaintext_3a_2, KEYSTREAM_3_2) in
+         out(att,m3_2);
+         let TH_4_2:bitstring=hash((wrap(TH_3_2), (ID_CRED_PSK_2, (plaintext_3b_2, CRED_PSK_2)))) in
+         let K_4_2:bitstring=edhoc_kdf(PRK_4e3m_2, seight, TH_4_2, key_length) in
+         let IV_4_2:bitstring=edhoc_kdf(PRK_3e2m_2, snine, TH_4_2, iv_length) in
+         in(att,m4_2:bitstring);
+         let external_aad_4_2:bitstring=TH_4_2 in
+         let ad_4_2:bitstring=(sEncrypt0, (sempty, external_aad_4_2)) in
+         let plaintext_4_2:bitstring=aeaddec(m4_2, K_4_2, IV_4_2, ad_4_2) in
+         let EAD_4_2:bitstring=plaintext_4_2 in
+         let PRK_out_2:bitstring=edhoc_kdf(PRK_4e3m_2, sseven, TH_4_2,
+                                           hash_length) in
+         event eAcceptI( cid_2, method_four, CRED_PSK_2, PRK_out_2, G_X_2, G_Y_2
+               )).
+let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring, CRED_PSK_2:bitstring)=
+    in(att,(C_R_2:bitstring, (EAD_2_2:bitstring, suitesR_2:bitstring)));
+    in(att,(method_2:bitstring, (suitesI_2:bitstring, (G_X_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)))));
+    event eStart_R( cid_2, method_2, CRED_PSK_2 );
+    event eMethodOk( method_2 );
+    new Y_2:bitstring;
+    new EAD_4_2:bitstring;
+    event eShare( Y_2 );
+    event eCompromiseShare( Y_2 );
+    let G_Y_2:bitstring=exp(g, Y_2) in
+    let G_XY_2:bitstring=exp(G_X_2, Y_2) in
+    let TH_1_2:bitstring=hash((wrap(method_2), (wrap(suitesI_2), (wrap(G_X_2), (wrap(C_I_2), EAD_1_2))))) in
+    let TH_2_2:bitstring=hash((wrap(G_Y_2), wrap(TH_1_2))) in
+    let PRK_2e_2:bitstring=hkdfextract(G_XY_2, TH_2_2) in
+    if method_2 = method_four then
+        (let plaintext_2_2:bitstring=(C_R_2, EAD_2_2) in
+         let KEYSTREAM_2_2:bitstring=edhoc_kdf(PRK_2e_2, sazero, TH_2_2,
+                                               plaintext_length) in
+         event eTHRShared( TH_2_2 );
+         event eDerivedRShared( G_XY_2 );
+         let m2_2:bitstring=(G_Y_2, encxor(plaintext_2_2, KEYSTREAM_2_2)) in
+         out(att,m2_2);
+         in(att,m3_2:bitstring);
+         let TH_3_2:bitstring=hash((wrap(TH_2_2), plaintext_2_2)) in
+         let PRK_3e2m_2:bitstring=PRK_2e_2 in
+         let SALT_4e3m_2:bitstring=edhoc_kdf(PRK_3e2m_2, sfive, TH_3_2,
+                                             hash_length) in
+         let PRK_4e3m_2:bitstring=hkdfextract(CRED_PSK_2, SALT_4e3m_2) in
+         let KEYSTREAM_3_2:bitstring=edhoc_kdf(PRK_3e2m_2, seleven, TH_3_2,
+                                               plaintext_length) in
+         let K_3_2:bitstring=edhoc_kdf(PRK_4e3m_2, stwelve, TH_3_2, key_length) in
+         let IV_3_2:bitstring=edhoc_kdf(PRK_3e2m_2, sthirteen, TH_3_2,
+                                        iv_length) in
+         let plaintext_3a_2:bitstring=decxor(m3_2, KEYSTREAM_3_2) in
+         let (ID_CRED_PSK_in_2:bitstring, ciphertext_3b_2:bitstring)=plaintext_3a_2 in
+         let external_aad_3_2:bitstring=(ID_CRED_PSK_2, (TH_3_2, CRED_PSK_2)) in
+         let ad_3_2:bitstring=(sEncrypt0, (sempty, external_aad_3_2)) in
+         let plaintext_3b_2:bitstring=aeaddec(ciphertext_3b_2, K_3_2, IV_3_2,
+                                              ad_3_2) in
+         let TH_4_2:bitstring=hash((wrap(TH_3_2), (ID_CRED_PSK_2, (plaintext_3b_2, CRED_PSK_2)))) in
+         let K_4_2:bitstring=edhoc_kdf(PRK_4e3m_2, seight, TH_4_2, key_length) in
+         let IV_4_2:bitstring=edhoc_kdf(PRK_3e2m_2, snine, TH_4_2, iv_length) in
+         let PRK_out_2:bitstring=edhoc_kdf(PRK_4e3m_2, sseven, TH_4_2,
+                                           hash_length) in
+         let external_aad_4_2:bitstring=TH_4_2 in
+         let ad_4_2:bitstring=(sEncrypt0, (sempty, external_aad_4_2)) in
+         let m4_2:bitstring=aeadenc(EAD_4_2, K_4_2, IV_4_2, ad_4_2) in
+         out(att,m4_2);
+         event eAcceptR( cid_2, method_four, CRED_PSK_2, PRK_out_2, G_Y_2, G_X_2
+               )).
+
+
+process
+    new cid_2:bitstring;
+    new psk_2:bitstring;
+    let CRED_PSK_2:bitstring=psk_2 in
+    let ID_CRED_PSK_2:bitstring=make_id(CRED_PSK_2) in
+    ((I(cid_2, ID_CRED_PSK_2, CRED_PSK_2))
+   | (R(cid_2, ID_CRED_PSK_2, CRED_PSK_2)))
+
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `executableI_simple' references action 
+    fact "Start_I" (arity 3, Linear) 
+  but no rule has such an action.
+  
+  lemma `executableR_simple' references action 
+    fact "Start_R" (arity 3, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `Equality' references action 
+    fact "Eq" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 2.7.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2024-10-30 14:56:23.355649243 UTC
+*)
+
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `executableI_simple' references action 
+    fact "Start_I" (arity 3, Linear) 
+  but no rule has such an action.
+  
+  lemma `executableR_simple' references action 
+    fact "Start_R" (arity 3, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `Equality' references action 
+    fact "Eq" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 2.7.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2024-10-30 14:56:23.355649243 UTC
+*)

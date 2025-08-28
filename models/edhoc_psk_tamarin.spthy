@@ -22,16 +22,16 @@ functions: method_four/0, length/0,
            // Credential modeling functions
            make_cred/2,        // make_cred(subject_id, psk) -> credential
            get_subject/1,      // get_subject(credential) -> subject_id  
-           get_psk/1,          // get_psk(credential) -> psk
+           get_psk/1          // get_psk(credential) -> psk
            // Helper functions for tuple destructuring
-           get_first/1, get_second/1, get_third/1, get_fourth/1, get_fifth/1
+          //  get_first/1, get_second/1, get_third/1, get_fourth/1, get_fifth/1
 
 equations: aeaddec(aeadenc(m,k,r,ad),k,r,ad) = m,
-           get_first(<a,b,c,d,e>) = a,
-           get_second(<a,b,c,d,e>) = b,
-           get_third(<a,b,c,d,e>) = c,
-           get_fourth(<a,b,c,d,e>) = d,
-           get_fifth(<a,b,c,d,e>) = e,
+          //  get_first(<a,b,c,d,e>) = a,
+          //  get_second(<a,b,c,d,e>) = b,
+          //  get_third(<a,b,c,d,e>) = c,
+          //  get_fourth(<a,b,c,d,e>) = d,
+          //  get_fifth(<a,b,c,d,e>) = e,
            // Credential equations
            get_subject(make_cred(subject, psk)) = subject,
            get_psk(make_cred(subject, psk)) = psk
@@ -194,7 +194,7 @@ rule I_4_ReceiveMessage4:
     external_aad_4 = <TH_4>
     ad_4 = <'Encrypt0', 'empty', external_aad_4>
     plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4)
-    EAD_4 = plaintext_4
+    // EAD_4 = plaintext_4
     PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length)
   in
   [
@@ -362,6 +362,7 @@ restriction OnlyMethodFour:
 
 
 // // Session key secrecy lemmas
+// tamarin-prover --prove=sec* edhoc_psk_tamarin.spthy --derivcheck-timeout=0 -s=10
 // // PASSED
 // lemma secretR_psk:
 //   "All cid subj_i subj_r prk gx gy #i #j #k.
@@ -379,18 +380,18 @@ restriction OnlyMethodFour:
 
 // // Authentication lemmas
 // // PASSED
-// lemma honestauthRI_psk_non_inj:
-//   "All cid subj_i subj_r prk gx gy #i #k.
-//      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectI(subj_i)@k
-//    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t & t < i & prk = prk2)
-//     | (Ex #t. LeakShare(gy)@t)"
+lemma honestauthRI_psk_non_inj:
+  "All cid subj_i subj_r prk gx gy #i #k.
+     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectI(subj_i)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t & t < i & prk = prk2)
+    | (Ex #t. LeakShare(gy)@t)"
 
-// // FALSIFIFED: found-trace
-// lemma honestauthIR_psk_non_inj:
-//   "All cid subj_i subj_r prk gx gy #i #k.
-//      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectR(subj_r)@k
-//    ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j & j < i & prk = prk2)
-//     | (Ex #t. LeakShare(gx)@t)"
+// FALSIFIFED: found-trace
+lemma honestauthIR_psk_non_inj:
+  "All cid subj_i subj_r prk gx gy #i #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j & j < i & prk = prk2)
+    | (Ex #t. LeakShare(gx)@t)"
 
 // // Uniqueness lemmas
 // // PAASED
