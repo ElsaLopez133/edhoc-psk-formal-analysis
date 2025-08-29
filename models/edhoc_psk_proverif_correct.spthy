@@ -40,7 +40,7 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
   // in(<suitesI,C_I,EAD_1>); // we let the attacker fully control the parameters used by a session
 
   event MethodOk(method);
-  event Debug_I_after_in(suitesI, C_I, EAD_1);
+  // event Debug_I_after_in(suitesI, C_I, EAD_1);
   
   new ~X; // DH share
   new ~EAD_3; // we model the EAD_3 as a fresh name to test later its secrecy
@@ -60,10 +60,10 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
       
     let m1 = <method,suitesI,G_X,C_I,EAD_1> in
     out(m1);
-    event Debug_I_Sending_m1(m1);
+    // event Debug_I_Sending_m1(m1);
 
     in(m2);
-    event Debug_I_Received_m2(m2);
+    // event Debug_I_Received_m2(m2);
 
     let < G_Y, CIPHERTEXT_2 > = m2 in
     let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
@@ -109,12 +109,12 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
       let IV_4 = edhoc_kdf(PRK_3e2m, 'nine', TH_4, iv_length) in
       let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
       out(m3);
-      event Debug_I_Sending_m3(m3);
+      // event Debug_I_Sending_m3(m3);
 
       event LeakSKey(PRK_out);
 
       in(m4);
-      event Debug_I_Received_m4(m4);
+      // event Debug_I_Received_m4(m4);
 
       let external_aad_4 = <TH_4> in
       let ad_4 = <'Encrypt0', 'empty', external_aad_4> in 
@@ -134,7 +134,7 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
   in(<C_R,EAD_2,suitesR>);
 
   in(m1);
-  event Debug_R_Received_m1(m1);
+  // event Debug_R_Received_m1(m1);
   let <method,suitesI,G_X,C_I,EAD_1> = m1 in
   //   in(<method, suitesI,G_X,C_I,EAD_1>);
 
@@ -169,10 +169,10 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
 
       let m2 = <G_Y, encxor(plaintext_2, KEYSTREAM_2A)> in
       out(m2);
-      event Debug_R_Sending_m2(m2);
+      // event Debug_R_Sending_m2(m2);
 
       in(m3);
-      event Debug_R_Receiving_m3(m3);
+      // event Debug_R_Receiving_m3(m3);
       let TH_3 = hash(<wrap(TH_2), plaintext_2>) in
       let PRK_3e2m = PRK_2e in
       let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five', TH_3, hash_length) in
@@ -191,7 +191,7 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
       let ID_CRED_PSK = ~id_cred_psk in
           
       if ID_CRED_PSK_in = ID_CRED_PSK then
-        event Debug_R_check_psk(ID_CRED_PSK);
+        // event Debug_R_check_psk(ID_CRED_PSK);
 
         let external_aad_3 = <ID_CRED_PSK, TH_3, CRED_I, CRED_R> in
         let ad_3 = <'Encrypt0', 'empty', external_aad_3> in
@@ -204,7 +204,7 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
         let ad_4 = <'Encrypt0', 'empty', external_aad_4> in
         let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
         out(m4);
-        event Debug_R_Sending_m4(m4);
+        // event Debug_R_Sending_m4(m4);
 
         event AcceptR(~cid, method_four, subject_i, subject_r, PRK_out, G_Y, G_X);
         event FinishR(~cid, PRK_out);
@@ -264,47 +264,47 @@ lemma executableR_simple:
   exists-trace
   "Ex cid method psk subj_r #i. Start_R(cid, method, psk, subj_r) @i"
 
-lemma executableI_send_m1:
-  exists-trace
-  "Ex m1 #i. Debug_I_Sending_m1(m1) @i"
-
-lemma executableI_receive_m2:
-  exists-trace
-  "Ex m2 #i. Debug_I_Sending_m1(m2) @i"
-
-lemma executableI_send_m3:
-  exists-trace
-  "Ex m3 #i. Debug_I_Sending_m3(m3) @i"
-
-lemma executableI_receive_m4:
-  exists-trace
-  "Ex m4 #i. Debug_I_Received_m4(m4) @i"
-
-lemma executableR_receive_m1:
-  exists-trace
-  "Ex m1 #i. Debug_R_Received_m1(m1) @i"
-
-lemma executableR_send_m2:
-  exists-trace
-  "Ex m2 #i. Debug_R_Sending_m2(m2) @i"
-
-lemma executableR_receive_m3:
-  exists-trace
-  "Ex m3 #i. Debug_R_Receiving_m3(m3) @i"
-
-lemma executableR_check_psk:
-  exists-trace
-  "Ex cred_psk #i. Debug_R_check_psk(cred_psk) @i"
-
-lemma executableR_send_m4:
-  exists-trace
-  "Ex m4 #i. Debug_R_Sending_m4(m4) @i"
-
-// lemma executable_full_protocol:
+// lemma executableI_send_m1:
 //   exists-trace
-//   "Ex cid1 cid2 prk1 prk2 #i #j.
-//     FinishI(cid1, prk1) @i &
-//     FinishR(cid2, prk2) @j &
-//     prk1 = prk2"
+//   "Ex m1 #i. Debug_I_Sending_m1(m1) @i"
+
+// lemma executableI_receive_m2:
+//   exists-trace
+//   "Ex m2 #i. Debug_I_Sending_m1(m2) @i"
+
+// lemma executableI_send_m3:
+//   exists-trace
+//   "Ex m3 #i. Debug_I_Sending_m3(m3) @i"
+
+// lemma executableI_receive_m4:
+//   exists-trace
+//   "Ex m4 #i. Debug_I_Received_m4(m4) @i"
+
+// lemma executableR_receive_m1:
+//   exists-trace
+//   "Ex m1 #i. Debug_R_Received_m1(m1) @i"
+
+// lemma executableR_send_m2:
+//   exists-trace
+//   "Ex m2 #i. Debug_R_Sending_m2(m2) @i"
+
+// lemma executableR_receive_m3:
+//   exists-trace
+//   "Ex m3 #i. Debug_R_Receiving_m3(m3) @i"
+
+// lemma executableR_check_psk:
+//   exists-trace
+//   "Ex cred_psk #i. Debug_R_check_psk(cred_psk) @i"
+
+// lemma executableR_send_m4:
+//   exists-trace
+//   "Ex m4 #i. Debug_R_Sending_m4(m4) @i"
+
+lemma executable_full_protocol:
+  exists-trace
+  "Ex cid1 cid2 prk1 prk2 #i #j.
+    FinishI(cid1, prk1) @i &
+    FinishR(cid2, prk2) @j &
+    prk1 = prk2"
 
 end

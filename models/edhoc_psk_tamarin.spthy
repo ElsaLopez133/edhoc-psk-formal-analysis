@@ -243,9 +243,9 @@ rule R_2_SendMessage2:
     TH_2 = hash(<wrap(G_Y), wrap(TH_1)>)
     G_XY = G_X^Y
     PRK_2e = hkdfextract(G_XY, TH_2)
-    KEYSTREAM_2 = edhoc_kdf(PRK_2e, 'azero', TH_2, plaintext_length)
+    KEYSTREAM_2A = edhoc_kdf(PRK_2e, 'azero', TH_2, plaintext_length)
     plaintext_2 = <C_R, EAD_2>
-    CIPHERTEXT_2 = plaintext_2 XOR KEYSTREAM_2
+    CIPHERTEXT_2 = plaintext_2 XOR KEYSTREAM_2A
     m2 = <G_Y, CIPHERTEXT_2>
   in
   [
