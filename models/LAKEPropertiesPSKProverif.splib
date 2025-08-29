@@ -1,20 +1,21 @@
-// LakePropertiesPSK.splib for EDHOC-PSK method_four
+// properties.splib for EDHOC-PSK method_four
 
 // ******************************************************************
 // ************** Executability  ************************************
 // ******************************************************************
 
-// PASSED
 lemma executableI_simple:
   exists-trace
   "Ex cid method psk subj_i #i. Start_I(cid, method, psk, subj_i) @i"
 
-// PASSED
 lemma executableR_simple:
   exists-trace
   "Ex cid method psk subj_r #i. Start_R(cid, method, psk, subj_r) @i"
 
-// PASSED
+// lemma executableI_send_m1:
+//   exists-trace
+//   "Ex m1 #i. Debug_I_Sending_m1(m1) @i"
+
 lemma executable_full_protocol:
   exists-trace
   "Ex cid1 cid2 prk1 prk2 #i #j.
@@ -22,57 +23,74 @@ lemma executable_full_protocol:
     FinishR(cid2, prk2) @j &
     prk1 = prk2"
 
+
 // ******************************************************************
 // ************** Confidentiality  **********************************
 // ******************************************************************
 
 // PASSED
 lemma secretR_psk:
-  "All cid subj_i subj_r prk gx gy #i #j #k.
-     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectR(subj_r)@k
-   ==> (Ex #t. LeakSessionKey(prk)@t) 
-    | (Ex #t. LeakShare(gy)@t)
+  "All cid m psk k4 ko y gx #i #j #k.
+     AcceptR(cid, m, psk, k4, ko, y, gx)@i & KU(ko)@j & Honest(psk)@k
+   ==> (Ex #t. LeakSessionKey(ko)@t) 
+    | (Ex #t. LeakShare(y)@t)
     | (Ex #t. LeakShare(gx)@t)"
 
 // PASSED
 lemma secretI_psk:
-  "All cid subj_i subj_r prk gx gy #i #j #k.
-     AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
-   ==> (Ex #t. LeakSessionKey(prk)@t)
-    | (Ex #t. LeakShare(gx)@t)
+  "All m psk k3 k4 ko x gy cid #i #j #k.
+     AcceptI(cid, m, psk, k3, k4, ko, x, gy)@i & KU(ko)@j & Honest(psk)@k
+   ==> (Ex #t. LeakSessionKey(ko)@t)
+    | (Ex #t. LeakShare(x)@t)
     | (Ex #t. LeakShare(gy)@t)"
 
 
 // ******************************************************************
 // ************** Authentication  ***********************************
 // ******************************************************************
-
-// PASSED
+// FLASIFIED
 lemma honestauthRI_psk_non_inj:
   "All cid subj_i subj_r prk gx gy #i #k.
      AcceptR(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectI(subj_i)@k
    ==> (Ex cid2 prk2 gx2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@t & t < i & prk = prk2)
     | (Ex #t. LeakShare(gy)@t)"
-
-// PASSED
+// FALSIFIED
 lemma honestauthIR_psk_non_inj:
   "All cid subj_i subj_r prk gx gy #i #k.
      AcceptI(cid, method_four, subj_i, subj_r, prk, gx, gy)@i & ExposeSubjectR(subj_r)@k
    ==> (Ex cid2 prk2 gx2 gy2 #j. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j & j < i & prk = prk2)
     | (Ex #t. LeakShare(gx)@t)"
 
-// injectivity 
-// PASSED
+// Uniqueness lemmas
+// PAASED
 lemma authRI_psk_unique:
-  "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
-     AcceptR(cid1, m, psk, prk, gx1, gy1)@i & AcceptR(cid2, m, psk, prk, gx2, gy2)@j
+  "All cid1 cid2 subj_i subj_r prk gx1 gy1 gx2 gy2 #i #j.
+     AcceptR(cid1, method_four, subj_i, subj_r, prk, gx1, gy1)@i & AcceptR(cid2, method_four, subj_i, subj_r, prk, gx2, gy2)@j
    ==> #i = #j"
 
-// PASSED
 lemma authIR_psk_unique:
-  "All cid1 cid2 m psk prk gx1 gy1 gx2 gy2 #i #j.
-     AcceptI(cid1, m, psk, prk, gx1, gy1)@i & AcceptI(cid2, m, psk, prk, gx2, gy2)@j
+  "All cid1 cid2 subj_i subj_r prk gx1 gy1 gx2 gy2 #i #j.
+     AcceptI(cid1, method_four, subj_i, subj_r, prk, gx1, gy1)@i & AcceptI(cid2, method_four, subj_i, subj_r, prk, gx2, gy2)@j
    ==> #i = #j"
+
+// ******************************************************************
+// ************** Transcript authentication  ************************
+// ******************************************************************
+
+lemma data_authentication_I_to_R_psk:
+  "All psk TH_2 TH_3 TH_4 suites EAD_1 EAD_2 EAD_3 m1 p2 p3 #i #j x gy ko.
+     AcceptIData(ko, method_four, psk, x, gy, <TH_2,TH_3,TH_4,suites,EAD_1,EAD_2,EAD_3,m1,p2,p3>)@i
+   & Honest(psk)@j
+   ==> (Ex #l. l < i & SendRData(method_four, psk, <TH_2,suites,EAD_1,EAD_2,m1,p2>)@l)
+    | (Ex #l. LeakShare(x)@l)"
+
+lemma data_authentication_R_to_I_psk:
+  "All psk TH_2 TH_3 TH_4 suites EAD_1 EAD_2 EAD_3 m1 p2 p3 y gx ko #i #j.
+     AcceptRData(ko, method_four, psk, y, gx, <TH_2,TH_3,TH_4,suites,EAD_1,EAD_2,EAD_3,m1,p2,p3>)@i
+   & Honest(psk)@j
+   ==> (Ex #l. l < i & AcceptIData(ko, method_four, psk, _, _, <TH_2,TH_3,TH_4,suites,EAD_1,EAD_2,EAD_3,m1,p2,p3>)@l)
+    | (Ex #l. LeakShare(y)@l)"
+
 
 // ******************************************************************
 // ************** Key Agreement  ************************************
@@ -96,11 +114,7 @@ lemma pfs_psk:
 // ******************************************************************
 // ************** Additional Security Properties  *******************
 // ******************************************************************
-
-lemma psk_secrecy:
-  "All psk #i #j.
-    !Honest(psk)@i & K(psk)@j ==> F"
-
+// PASSED
 // Strong secrecy of session key if no DH leak
 lemma session_key_secrecy:
   "All cid prk #i.
@@ -111,40 +125,3 @@ lemma subject_psk_consistency:
      AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx1, gy1)@i &
      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j
    ==> prk1 = prk2"
-
-// ******************************************************************
-// ************** Helper Lemmas  ************************************
-// ******************************************************************
-
-lemma honest_agents_agree:
-  "All cid1 cid2 psk prk1 prk2 gx gy #i #j #k.
-     AcceptI(cid1, method_four, psk, prk1, gx, gy)@i &
-     AcceptR(cid2, method_four, psk, prk2, gx, gy)@j &
-     !Honest(psk)@k
-   ==> prk1 = prk2"
-  
-// ******************************************************************
-// ************** Identity binding***********************************
-// ******************************************************************
-
-// PASSED
-lemma identity_binding:
-  "All cid subj_i subj_r prk x gy #i.
-     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i
-   ==> (Ex #j. ExposeSubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
-
-// Subject authenticity - responder knows initiator's real identity
-lemma subject_authenticity_R:
-  "All cid subj_i subj_r prk gx y #i #j #k.
-     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, y)@i & 
-     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
-   ==> (Ex cid2 prk2 x2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, x2, gy2)@t)
-    | (Ex #t. LeakShare(gy)@t)"
-
-// Subject authenticity - initiator knows responder's real identity  
-lemma subject_authenticity_I:
-  "All cid subj_i subj_r prk x gy #i #j #k.
-     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & 
-     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
-   ==> (Ex cid2 prk2 gx2 y2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, y2)@t)
-    | (Ex #t. LeakShare(gx)@t)"

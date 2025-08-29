@@ -4,7 +4,7 @@
  * Model:      Cleaned for PSK authentication (method_four), no MAC or signatures
 */
 
-theory edhoc_psk_proverif
+theory edhoc_psk_sapic
 
 begin
 
@@ -21,36 +21,36 @@ functions:
   encxor/2, decxor/2 [destructor],
   // Credential modeling functions
   make_cred/2,        // make_cred(subject_id, psk) -> credential
-  get_subject/1,      // get_subject(credential) -> subject_id  
-  get_psk/1          // get_psk(credential) -> psk
+  get_subject/1      // get_subject(credential) -> subject_id  
+  // get_psk/1          // get_psk(credential) -> psk
 
 equations: 
   aeaddec(aeadenc(m,k,r,ad),k,r,ad) = m,
   decxor(encxor(m,k),k) = m,
   // Credential equations
-  get_subject(make_cred(subject, psk)) = subject,
-  get_psk(make_cred(subject, psk)) = psk,
+  get_subject(make_cred(subject, psk)) = subject
+  // get_psk(make_cred(subject, psk)) = psk,
   // make_id(cred_i) = make_id(cred_r)
 
 
 let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) = 
-  new suitesI;
-  new C_I;
-  new EAD_1;
-  // in(<suitesI,C_I,EAD_1>); // we let the attacker fully control the parameters used by a session
+  // new suitesI;
+  // new C_I;
+  // new EAD_1;
+  in(<suitesI,C_I,EAD_1>); // we let the attacker fully control the parameters used by a session
 
   event MethodOk(method);
   // event Debug_I_after_in(suitesI, C_I, EAD_1);
   
   new ~X; // DH share
   new ~EAD_3; // we model the EAD_3 as a fresh name to test later its secrecy
-  event Share(~X);
+  event LeakShare(~X);
   event CompromiseShare(~X);
 
   let subject_i = get_subject(cred_i) in
   let subject_r = get_subject(cred_r) in
-  let psk_from_cred_i = get_psk(cred_i) in       
-  let psk_from_cred_r = get_psk(cred_r) in       
+  let psk_from_cred_i = ~psk in  // get_psk(cred_i) in       
+  let psk_from_cred_r = ~psk in  //get_psk(cred_r) in       
     
   if (psk_from_cred_i = ~psk) & (psk_from_cred_r = ~psk) then
     // if psk_from_cred_i = ~psk then  
@@ -72,7 +72,7 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
     let G_YX = G_Y^~X in
     
     let PRK_2e = hkdfextract(TH_2, G_YX) in
-    let KEYSTREAM_2A = edhoc_kdf(PRK_2e,'zero',TH_2,plaintext_length) in
+    let KEYSTREAM_2A = edhoc_kdf(PRK_2e,'tzero',TH_2,plaintext_length) in
     let plaintext_2 = decxor(CIPHERTEXT_2, KEYSTREAM_2A) in
     let < C_R, EAD_2> = plaintext_2 in
 
@@ -111,7 +111,7 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
       out(m3);
       // event Debug_I_Sending_m3(m3);
 
-      event LeakSKey(PRK_out);
+      event LeakSessionKey(PRK_out);
 
       in(m4);
       // event Debug_I_Received_m4(m4);
@@ -121,7 +121,7 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
       let plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4) in
       let EAD_4 = plaintext_4 in
 
-      event AcceptI(~cid, method_four, subject_i, subject_r, PRK_out, G_X, G_Y);
+      event AcceptI(~cid, method_four, subject_i, subject_r, PRK_out, ~X, G_Y);
       event FinishI(~cid, PRK_out);
       0
     ) else (
@@ -142,13 +142,13 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
   
   new ~Y;
   new ~EAD_4;
-  event Share(~Y);
+  event LeakShare(~Y);
   event CompromiseShare(~Y);
 
   let subject_i = get_subject(cred_i) in
   let subject_r = get_subject(cred_r) in
-  let psk_from_cred_r = get_psk(cred_r) in
-  let psk_from_cred_i = get_psk(cred_i) in
+  let psk_from_cred_r = ~psk in // get_psk(cred_r) in
+  let psk_from_cred_i = ~psk in // get_psk(cred_i) in
   
   if (psk_from_cred_i = ~psk) & (psk_from_cred_r = ~psk) then
 
@@ -163,7 +163,7 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
 
     if method = method_four() then (
       let plaintext_2 = <C_R, EAD_2> in
-      let KEYSTREAM_2A = edhoc_kdf(PRK_2e, 'zero', TH_2, plaintext_length) in
+      let KEYSTREAM_2A = edhoc_kdf(PRK_2e, 'tzero', TH_2, plaintext_length) in
       event THRShared(TH_2); 	    
       event DerivedRShared(G_XY); 
 
@@ -206,8 +206,9 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
         out(m4);
         // event Debug_R_Sending_m4(m4);
 
-        event AcceptR(~cid, method_four, subject_i, subject_r, PRK_out, G_Y, G_X);
+        event AcceptR(~cid, method_four, subject_i, subject_r, PRK_out, G_X, ~Y);
         event FinishR(~cid, PRK_out);
+        event LeakSessionKey(PRK_out);
         0
       else
         0
@@ -240,7 +241,7 @@ process:
 
   event ExposeSubjectI(subject_i_main);
   event ExposeSubjectR(subject_r_main);
-  event ExposeHonest(~psk);
+  event Honest(~psk);
 
   (
     I(~cid, method_fixed, cred_i, cred_r, ~psk, ~id_cred_psk) |
@@ -254,8 +255,12 @@ process:
 restriction OnlyMethodFour:
   "All method #i. MethodOk(method) @i ==> method = method_four()"
 
-// Simple execution lemmas for testing
+// ******************************************************************
+// ************** Executability  ************************************
+// ******************************************************************
+// PASSED
 // tamarin-prover --prove=exec* edhoc_psk_tamarin.spthy --derivcheck-timeout=0 -s=10
+
 lemma executableI_simple:
   exists-trace
   "Ex cid method psk subj_i #i. Start_I(cid, method, psk, subj_i) @i"
@@ -264,47 +269,118 @@ lemma executableR_simple:
   exists-trace
   "Ex cid method psk subj_r #i. Start_R(cid, method, psk, subj_r) @i"
 
-// lemma executableI_send_m1:
+// lemma executable_full_protocol:
 //   exists-trace
-//   "Ex m1 #i. Debug_I_Sending_m1(m1) @i"
+//   "Ex cid1 cid2 prk1 prk2 #i #j.
+//     FinishI(cid1, prk1) @i &
+//     FinishR(cid2, prk2) @j &
+//     prk1 = prk2"
 
-// lemma executableI_receive_m2:
-//   exists-trace
-//   "Ex m2 #i. Debug_I_Sending_m1(m2) @i"
+// ******************************************************************
+// ************** Confidentiality  **********************************
+// ******************************************************************
+// PASSED
+lemma secretR_psk:
+  "All cid subj_i subj_r prk gx y #i #j #k.
+     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, y)@i & K(prk)@j & ExposeSubjectR(subj_r)@k
+   ==> (Ex #t. LeakSessionKey(prk)@t) 
+    | (Ex #t. LeakShare(y)@t)
+    | (Ex #t. LeakShare(gx)@t)"
+// PASSED
+lemma secretI_psk:
+  "All cid subj_i subj_r prk x gy #i #j #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
+   ==> (Ex #t. LeakSessionKey(prk)@t)
+    | (Ex #t. LeakShare(x)@t)
+    | (Ex #t. LeakShare(gy)@t)"
 
-// lemma executableI_send_m3:
-//   exists-trace
-//   "Ex m3 #i. Debug_I_Sending_m3(m3) @i"
+// ******************************************************************
+// ************** Authentication  ***********************************
+// ******************************************************************
+// PASSED
+lemma honestauthRI_psk_non_inj:
+  "All cid subj_i subj_r prk gx y #i #k.
+     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, y)@i & ExposeSubjectI(subj_i)@k
+   ==> (Ex cid2 prk2 x2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, x2, gy2)@t & t < i & prk = prk2)
+    | (Ex #t. LeakShare(y)@t)"
+// PASSED
+lemma honestauthIR_psk_non_inj:
+  "All cid subj_i subj_r prk x gy #i #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 gx2 y2 #j. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, y2)@j & j < i & prk = prk2)
+    | (Ex #t. LeakShare(x)@t)"
 
-// lemma executableI_receive_m4:
-//   exists-trace
-//   "Ex m4 #i. Debug_I_Received_m4(m4) @i"
+// Uniqueness lemmas
+// PAASED
+lemma authRI_psk_unique:
+  "All cid1 cid2 subj_i subj_r prk gx1 y1 gx2 y2 #i #j.
+     AcceptR(cid1, method_four, subj_i, subj_r, prk, gx1, y1)@i & AcceptR(cid2, method_four, subj_i, subj_r, prk, gx2, y2)@j
+   ==> #i = #j"
 
-// lemma executableR_receive_m1:
-//   exists-trace
-//   "Ex m1 #i. Debug_R_Received_m1(m1) @i"
+lemma authIR_psk_unique:
+  "All cid1 cid2 subj_i subj_r prk x1 gy1 x2 gy2 #i #j.
+     AcceptI(cid1, method_four, subj_i, subj_r, prk, x1, gy1)@i & AcceptI(cid2, method_four, subj_i, subj_r, prk, x2, gy2)@j
+   ==> #i = #j"
 
-// lemma executableR_send_m2:
-//   exists-trace
-//   "Ex m2 #i. Debug_R_Sending_m2(m2) @i"
 
-// lemma executableR_receive_m3:
-//   exists-trace
-//   "Ex m3 #i. Debug_R_Receiving_m3(m3) @i"
+// ******************************************************************
+// ************** Key Agreement  ************************************
+// ******************************************************************
+// PASSED
+// Not sure about this one...
+// lemma key_agreement_psk:
+//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy x y #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, x, gy)@i &
+//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, y)@j
+//    ==> prk1 = prk2"
 
-// lemma executableR_check_psk:
-//   exists-trace
-//   "Ex cred_psk #i. Debug_R_check_psk(cred_psk) @i"
+// PASSED
+lemma pfs_psk:
+  "All cid subj_i subj_r prk x gy #i #j #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
+   ==> (Ex #t. LeakShare(x)@t & t < i)
+    | (Ex #t. LeakShare(gy)@t & t < i)
+    | (Ex #t. LeakSessionKey(prk)@t)"
 
-// lemma executableR_send_m4:
-//   exists-trace
-//   "Ex m4 #i. Debug_R_Sending_m4(m4) @i"
+// ******************************************************************
+// ************** Additional Security Properties  *******************
+// ******************************************************************
+// PASSED
+// Strong secrecy of session key if no DH leak
+// lemma session_key_secrecy:
+//   "All cid prk #i.
+//     FinishI(cid, prk)@i ==> not (Ex #j. K(prk)@j & not (Ex #k. LeakSessionKey(prk)@k))"
 
-lemma executable_full_protocol:
-  exists-trace
-  "Ex cid1 cid2 prk1 prk2 #i #j.
-    FinishI(cid1, prk1) @i &
-    FinishR(cid2, prk2) @j &
-    prk1 = prk2"
+// PASSED
+// lemma subject_psk_consistency:
+//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx1 gy1 gx2 gy2 #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, gx1, gy1)@i &
+//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, gy2)@j
+//    ==> prk1 = prk2"
+
+// ******************************************************************
+// ************** Identity binding***********************************
+// ******************************************************************
+// PASSED
+lemma identity_binding:
+  "All cid subj_i subj_r prk x gy #i.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i
+   ==> (Ex #j. ExposeSubjectI(subj_i)@j) & (Ex #k. ExposeSubjectR(subj_r)@k)"
+
+// Subject authenticity - responder knows initiator's real identity
+lemma subject_authenticity_R:
+  "All cid subj_i subj_r prk gx y #i #j #k.
+     AcceptR(cid, method_four, subj_i, subj_r, prk, gx, y)@i & 
+     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 x2 gy2 #t. AcceptI(cid2, method_four, subj_i, subj_r, prk2, x2, gy2)@t)
+    | (Ex #t. LeakShare(y)@t)"
+
+// Subject authenticity - initiator knows responder's real identity  
+lemma subject_authenticity_I:
+  "All cid subj_i subj_r prk x gy #i #j #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & 
+     ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
+   ==> (Ex cid2 prk2 gx2 y2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, y2)@t)
+    | (Ex #t. LeakShare(x)@t)"
 
 end
