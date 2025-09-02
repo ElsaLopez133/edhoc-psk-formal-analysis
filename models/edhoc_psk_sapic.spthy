@@ -46,6 +46,7 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
   new ~EAD_3; // we model the EAD_3 as a fresh name to test later its secrecy
   event LeakShare(~X);
   event CompromiseShare(~X);
+  event LeakEAD(~EAD_3);
 
   let subject_i = get_subject(cred_i) in
   let subject_r = get_subject(cred_r) in
@@ -109,6 +110,8 @@ let I(~cid, method, cred_i, cred_r, ~psk, ~id_cred_psk) =
       let IV_4 = edhoc_kdf(PRK_3e2m, 'nine', TH_4, iv_length) in
       let PRK_out = edhoc_kdf(PRK_4e3m, 'seven', TH_4, hash_length) in
       out(m3);
+      event TransmitEAD(m3, ~EAD_3, PRK_4e3m);
+
       // event Debug_I_Sending_m3(m3);
 
       event LeakSessionKey(PRK_out);
@@ -144,6 +147,7 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
   new ~EAD_4;
   event LeakShare(~Y);
   event CompromiseShare(~Y);
+  event LeakEAD(~EAD_4);
 
   let subject_i = get_subject(cred_i) in
   let subject_r = get_subject(cred_r) in
@@ -204,6 +208,8 @@ let R(~cid, cred_i, cred_r, ~psk, ~id_cred_psk) =
         let ad_4 = <'Encrypt0', 'empty', external_aad_4> in
         let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
         out(m4);
+        event TransmitEAD(m4, ~EAD_4, PRK_out);
+
         // event Debug_R_Sending_m4(m4);
 
         event AcceptR(~cid, method_four, subject_i, subject_r, PRK_out, G_X, ~Y);
@@ -294,6 +300,33 @@ lemma secretI_psk:
     | (Ex #t. LeakShare(x)@t)
     | (Ex #t. LeakShare(gy)@t)"
 
+    // ******************************************************************
+// ************** Key Agreement  ************************************
+// ******************************************************************
+// PASSED
+// Not sure about this one...
+// lemma key_agreement_psk:
+//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy x y #i #j.
+//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, x, gy)@i &
+//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, y)@j
+//    ==> prk1 = prk2"
+
+// PASSED
+lemma pfs_psk:
+  "All cid subj_i subj_r prk x gy #i #j #k.
+     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
+   ==> (Ex #t. LeakShare(x)@t & t < i)
+    | (Ex #t. LeakShare(gy)@t & t < i)
+    | (Ex #t. LeakSessionKey(prk)@t)"
+
+// PASSED
+lemma explicit_key_confirmation_I:
+  "All cid subj_i subj_r prk x gy #i.
+    AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i
+  ==> (Ex cid2 prk2 gx2 y2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, y2)@t)
+    | (Ex #t. LeakShare(x)@t)"
+
+
 // ******************************************************************
 // ************** Authentication  ***********************************
 // ******************************************************************
@@ -322,25 +355,6 @@ lemma authIR_psk_unique:
      AcceptI(cid1, method_four, subj_i, subj_r, prk, x1, gy1)@i & AcceptI(cid2, method_four, subj_i, subj_r, prk, x2, gy2)@j
    ==> #i = #j"
 
-
-// ******************************************************************
-// ************** Key Agreement  ************************************
-// ******************************************************************
-// PASSED
-// Not sure about this one...
-// lemma key_agreement_psk:
-//   "All cid1 cid2 subj_i subj_r prk1 prk2 gx gy x y #i #j.
-//      AcceptI(cid1, method_four, subj_i, subj_r, prk1, x, gy)@i &
-//      AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx, y)@j
-//    ==> prk1 = prk2"
-
-// PASSED
-lemma pfs_psk:
-  "All cid subj_i subj_r prk x gy #i #j #k.
-     AcceptI(cid, method_four, subj_i, subj_r, prk, x, gy)@i & K(prk)@j & ExposeSubjectI(subj_i)@k
-   ==> (Ex #t. LeakShare(x)@t & t < i)
-    | (Ex #t. LeakShare(gy)@t & t < i)
-    | (Ex #t. LeakSessionKey(prk)@t)"
 
 // ******************************************************************
 // ************** Additional Security Properties  *******************
@@ -382,5 +396,16 @@ lemma subject_authenticity_I:
      ExposeSubjectI(subj_i)@j & ExposeSubjectR(subj_r)@k
    ==> (Ex cid2 prk2 gx2 y2 #t. AcceptR(cid2, method_four, subj_i, subj_r, prk2, gx2, y2)@t)
     | (Ex #t. LeakShare(x)@t)"
+
+
+// ******************************************************************
+// ************** EAD protection  ***********************************
+// ******************************************************************
+// PASSED
+lemma ead_confidentiality:
+  "All msg ead prk #i #j.
+    TransmitEAD(msg, ead, prk)@i & K(prk)@j
+  ==> (Ex #k. LeakSessionKey(prk)@k)
+    | (Ex #k. LeakEAD(ead)@k)"
 
 end
