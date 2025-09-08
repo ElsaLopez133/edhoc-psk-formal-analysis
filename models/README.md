@@ -10,6 +10,9 @@
 
 ---
 
+WIK: The _debug files contain work in progress
+
+
 ## 🚀 Running the model using SAPIC+
 
 The file edhoc_psk_sapic.spthy is written in the SAPIC+ syntax, meaning that the process is modled using the applied pi calculus (same as ProVerif) whereas lemmas are writtne using first-order-logic, (same as Tamarin).
