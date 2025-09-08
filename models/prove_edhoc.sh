@@ -40,4 +40,4 @@ tamarin-prover --prove="$LEMMAS" \
     +RTS -N"$THREADS" -RTS \
     -DLeakShare -DLeakPSK -DLeakSessionKey
 
-# tamarin-prover --prove=pfs*  edhoc_psk_sapic_debug.spthy --derivcheck-timeout=0 -DLeakShare -DLeakPSK -DLeakSessionKey
+# tamarin-prover --prove=pfs*  edhoc_psk_sapic.spthy --derivcheck-timeout=0 -DLeakShare -DLeakPSK -DLeakSessionKey
