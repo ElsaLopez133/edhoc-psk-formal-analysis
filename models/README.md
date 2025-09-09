@@ -5,12 +5,9 @@
 | `edhoc_psk_tamarin.spthy` | Main Tamarin theory modeling EDHOC with PSK |
 | `edhoc_psk_sapic.spthy` | Main SAPIC+ theory modeling EDHOC with PSK |
 | `edhoc_psk_proverif.pv` | Main ProVerif theory modeling EDHOC with PSK |
-| `LAKEPropertiesPSK.splib` | Lemas for Proverif model |
-| `LAKEPropertiesPSKTamarin.spthy` | Lemas for Tamarin model |
+| `LAKEPropertiesPSK.spthy` | Lemas for SAPIC model |
 
 ---
-
-WIK: The _debug files contain work in progress
 
 
 ## 🚀 Running the model using SAPIC+
@@ -40,6 +37,8 @@ tamarin-prover --prove=session_key_secrecy edhoc_psk_sapic.spthy
 ```
 
 You can change session_key_secrecy to any lemma defined in the file.
+
+The script prove_edhoc.sh can be used to run tamarin adding different parameters. and using different threat models (-DLeakShare -DLeakPSK -DLeakSessionKey -DSanityCheck)
 
 #### Interactive Mode (Optional)
 
@@ -71,6 +70,17 @@ We can then run ProVerif using
 
 ```bash
 proverif edhoc_psk_proverif.pv 
+```
+
+If you want to output the trace-attack, create a directory (in this case ./graphs) and use the -graph option 
+
+```bash
+proverif -graph ./graphs edhoc_psk_proverif.pv
+```
+
+To output the elapsed time, do
+```bash
+/usr/bin/time -f "Elapsed time: %e seconds" proverif edhoc_psk_proverif.pv
 ```
 
 ### ❓Which one to use

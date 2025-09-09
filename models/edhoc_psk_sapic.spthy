@@ -60,6 +60,8 @@ let I(~cid, method, ID_CRED_PSK) =
     let psk    = get_psk(ID_CRED_PSK) in
     let subject_i = get_subject(CRED_I) in
     let subject_r = get_subject(CRED_R) in
+    event InitiateWithID(subject_i, subject_r);
+    event ExposeSubjectI(subject_i);
 
     event Start_I(~cid, method, subject_i);
 
@@ -101,7 +103,9 @@ let I(~cid, method, ID_CRED_PSK) =
         let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
         let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
         let PRK_out = edhoc_kdf(PRK_4e3m,'seven', TH_4, hash_length) in
-        event DerivedI(~cid,PRK_out,~X,G_Y);
+        event DerivedI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y);
+        event SendIData(PRK_out,method, subject_i, subject_r, psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a>);
+
         out(m3);
         event TransmitEAD(m3, ~EAD_3, PRK_4e3m);
         
@@ -112,7 +116,7 @@ let I(~cid, method, ID_CRED_PSK) =
                 let ad_4 = <'Encrypt0','empty',external_aad_4> in
                 let plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4) in
                 let EAD_4 = plaintext_4 in
-
+                event AcceptIData(PRK_out,method, subject_i, subject_r, psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a, plaintext_4>);
                 event AcceptI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y);
                 event FinishI(~cid, PRK_out);
                 0
@@ -143,6 +147,8 @@ let R(~cid, ID_CRED_PSK) =
     let psk    = get_psk(ID_CRED_PSK) in
     let subject_i = get_subject(CRED_I) in
     let subject_r = get_subject(CRED_R) in
+    event RespondWithID(subject_i, subject_r);
+    event ExposeSubjectR(subject_r);
 
     event Start_R(~cid, method, subject_r);
 
@@ -160,9 +166,11 @@ let R(~cid, ID_CRED_PSK) =
       event DerivedRShared(G_XY);
 
       let m2 = <G_Y, encxor(plaintext_2, KEYSTREAM_2A)> in
+      event SendRData(method, subject_i, subject_r, psk,<TH_2,suitesI, EAD_1, EAD_2, m1, plaintext_2>);							    
       out(m2);
 
       in(m3);
+
       let TH_3 = hash(<wrap(TH_2), plaintext_2>) in
       let PRK_3e2m = PRK_2e in
       let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five', TH_3, hash_length) in
@@ -177,6 +185,7 @@ let R(~cid, ID_CRED_PSK) =
         let external_aad_3 = <ID_CRED_PSK, TH_3, CRED_I, CRED_R> in
         let ad_3 = <'Encrypt0','empty',external_aad_3> in
         let plaintext_3b = aeaddec(ciphertext_3b, K_3, IV_3, ad_3) in
+        let <EAD_3> = plaintext_3b in
         let TH_4 = hash(<wrap(TH_3), ID_CRED_PSK, plaintext_3b, CRED_I, CRED_R>) in
         let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
         let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
@@ -187,6 +196,7 @@ let R(~cid, ID_CRED_PSK) =
         event DerivedR(~cid,PRK_out,~Y,G_X);
         event TransmitEAD(m4, ~EAD_4, PRK_out);
         event AcceptR(~cid, method, subject_i, subject_r, PRK_out, G_X, ~Y);
+        event AcceptRData(PRK_out,method, subject_i, subject_r,psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
         event FinishR(~cid, PRK_out);
         out(m4);
         (
@@ -214,8 +224,8 @@ process:
     let cred_r = make_cred(~subject_r, ~psk) in
     let ID_CRED_PSK = make_id(cred_i, cred_r, ~psk) in
 
-    event ExposeSubjectI(~subject_i);
-    event ExposeSubjectR(~subject_r);
+    // event ExposeSubjectI(~subject_i);
+    // event ExposeSubjectR(~subject_r);
 
     (
         !I(~cid, method_four(), ID_CRED_PSK)
@@ -225,7 +235,7 @@ process:
     
   )
 
-#include "LakePropertiesPSKTamarin.splib"
+#include "LakePropertiesPSK.splib"
 
 restriction OnlyMethodFour:
   "All method #i. MethodOk(method) @i ==> method = method_four()"

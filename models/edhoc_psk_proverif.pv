@@ -35,9 +35,11 @@ fun wrap(bitstring):bitstring.
 fun xor(bitstring,bitstring):bitstring.
 fun zero():bitstring.
 event eAcceptI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eAcceptIData(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eAcceptR(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eAcceptRData(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eCompromise(bitstring).
-event eDerivedI(bitstring,bitstring,bitstring,bitstring).
+event eDerivedI(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
 event eDerivedIShared(bitstring).
 event eDerivedR(bitstring,bitstring,bitstring,bitstring).
 event eDerivedRShared(bitstring).
@@ -46,10 +48,14 @@ event eExposeSubjectR(bitstring).
 event eFinishI(bitstring,bitstring).
 event eFinishR(bitstring,bitstring).
 event eHonest(bitstring).
+event eInitiateWithID(bitstring,bitstring).
 event eLeakEAD(bitstring).
 event eLeakSessionKey(bitstring).
 event eLeakShare(bitstring).
 event eMethodOk(bitstring).
+event eRespondWithID(bitstring,bitstring).
+event eSendIData(bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring,bitstring).
+event eSendRData(bitstring,bitstring,bitstring,bitstring,bitstring).
 event eShare(bitstring).
 event eSharePSK(bitstring).
 event eStart_I(bitstring,bitstring,bitstring).
@@ -67,6 +73,30 @@ reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall psk:bitstring, subject:bitstring;   get_subject(make_cred(subject, psk)) = subject.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 
+(*secretR_psk*)
+query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
+      psk:bitstring, subj_i:bitstring, subj_r:bitstring, y:bitstring, i:time,
+      j:time, k:time, t:time;
+ (((event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) &&
+   (attacker( prk )@j)) &&
+  (event(eHonest( psk ))@k)) ==>
+ (((((event(eCompromise( psk ))@t) && (t < i)) ||
+    (event(eLeakSessionKey( prk ))@t)) ||
+   (event(eLeakShare( y ))@t)) ||
+  (event(eLeakShare( gx ))@t))
+.
+(*secretI_psk*)
+query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
+      psk:bitstring, subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time,
+      j:time, k:time, t:time;
+ (((event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) &&
+   (attacker( prk )@j)) &&
+  (event(eHonest( psk ))@k)) ==>
+ (((((event(eCompromise( psk ))@t) && (t < i)) ||
+    (event(eLeakSessionKey( prk ))@t)) ||
+   (event(eLeakShare( gy ))@t)) ||
+  (event(eLeakShare( x ))@t))
+.
 (*honestauthRI_psk_non_inj*)
 query cid:bitstring, cid2:bitstring, gx:bitstring, gy2:bitstring,
       m:bitstring, prk:bitstring, prk2:bitstring, psk:bitstring,
@@ -74,7 +104,8 @@ query cid:bitstring, cid2:bitstring, gx:bitstring, gy2:bitstring,
       k:time, t:time;
  ((event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eDerivedI( cid2, prk2, x2, gy2 ))@t) && (t < i)) &&
+ (((((event(eDerivedI( cid2, m, subj_i, subj_r, prk2, x2, gy2 ))@t) &&
+     (t < i)) &&
     (prk = prk2)) ||
    ((event(eCompromise( psk ))@t) && (t < i))) ||
   (event(eLeakShare( y ))@t))
@@ -112,6 +143,93 @@ query cid1:bitstring, cid2:bitstring, gy1:bitstring, gy2:bitstring,
   (event(eHonest( psk ))@k)) ==>
  ((event(eCompromise( psk ))@t) || ((event(eHonest( psk ))@t) && (i = j)))
 .
+(*data_authentication_I_to_R*)
+query EAD_1:bitstring, EAD_2:bitstring, EAD_3:bitstring,
+      PRK_out:bitstring, TH_2:bitstring, TH_3:bitstring, TH_4:bitstring,
+      gx:bitstring, gy:bitstring, m1:bitstring, method:bitstring, p2:bitstring,
+      p3:bitstring, p4:bitstring, psk:bitstring, subject_i:bitstring,
+      subjetc_r:bitstring, suitesI:bitstring, x:bitstring, y:bitstring, i:time,
+      j:time, l:time;
+ ((event(eAcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       (TH_2, (TH_3, (TH_4, (suitesI, (EAD_1, (EAD_2, (EAD_3, (m1, (p2, (p3, p4))))))))))
+         ))@i) &&
+  (event(eHonest( psk ))@j)) ==>
+ ((((l < i) &&
+    (event(eAcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                         (TH_2, (TH_3, (TH_4, (suitesI, (EAD_1, (EAD_2, (EAD_3, (m1, (p2, p3)))))))))
+           ))@l)) ||
+   ((l < i) && (event(eCompromise( psk ))@l))) ||
+  (event(eLeakShare( x ))@l))
+.
+(*data_authentication_R_to_I*)
+query EAD_1:bitstring, EAD_2:bitstring, EAD_3:bitstring,
+      PRK_out:bitstring, TH_2:bitstring, TH_3:bitstring, TH_4:bitstring,
+      gx:bitstring, gy:bitstring, m1:bitstring, method:bitstring, p2:bitstring,
+      p3:bitstring, psk:bitstring, subject_i:bitstring, subjetc_r:bitstring,
+      suitesI:bitstring, x:bitstring, y:bitstring, i:time, j:time, l:time;
+ ((event(eAcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                       (TH_2, (TH_3, (TH_4, (suitesI, (EAD_1, (EAD_2, (EAD_3, (m1, (p2, p3)))))))))
+         ))@i) &&
+  (event(eHonest( psk ))@j)) ==>
+ ((((l < i) &&
+    (event(eSendIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       (TH_2, (TH_3, (TH_4, (suitesI, (EAD_1, (EAD_2, (EAD_3, (m1, (p2, p3)))))))))
+           ))@l)) ||
+   ((l < i) && (event(eCompromise( psk ))@l))) ||
+  (event(eLeakShare( y ))@l))
+.
+(*key_agreement_R_implies_I*)
+query PRK_out:bitstring, cid:bitstring, gx:bitstring, gy:bitstring,
+      method:bitstring, psk:bitstring, subj_i:bitstring, subj_r:bitstring,
+      x:bitstring, y:bitstring, i:time, j:time, k:time;
+ (event(eAcceptR( cid, method, subj_i, subj_r, PRK_out, gx, y ))@j) ==>
+ ((((i < j) &&
+    (event(eDerivedI( cid, method, subj_i, subj_r, PRK_out, x, gy ))@i)) ||
+   (event(eCompromise( psk ))@k)) ||
+  (event(eLeakShare( y ))@k))
+.
+(*key_agreement_I_implies_R*)
+query PRK_out:bitstring, cid:bitstring, gx:bitstring, gy:bitstring,
+      method:bitstring, psk:bitstring, subj_i:bitstring, subj_r:bitstring,
+      x:bitstring, y:bitstring, i:time, j:time, k:time;
+ (event(eAcceptI( cid, method, subj_i, subj_r, PRK_out, x, gy ))@i) ==>
+ ((((j < i) &&
+    (event(eAcceptR( cid, method, subj_i, subj_r, PRK_out, gx, y ))@j)) ||
+   (event(eCompromise( psk ))@k)) ||
+  (event(eLeakShare( x ))@k))
+.
+(*pfs_psk*)
+query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
+      psk:bitstring, subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time,
+      j:time, k:time, t:time;
+ (((event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) &&
+   (attacker( prk )@j)) &&
+  (event(eHonest( psk ))@k)) ==>
+ ((((event(eLeakShare( x ))@t) && (t < i)) ||
+   ((event(eLeakShare( gy ))@t) && (t < i))) ||
+  (event(eLeakSessionKey( prk ))@t))
+.
+(*explicit_key_confirmation_I*)
+query cid:bitstring, cid2:bitstring, gx2:bitstring, gy:bitstring,
+      m:bitstring, prk:bitstring, prk2:bitstring, subj_i:bitstring,
+      subj_r:bitstring, x:bitstring, y2:bitstring, i:time, t:time;
+ (event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) ==>
+ (((event(eAcceptR( cid2, m, subj_i, subj_r, prk2, gx2, y2 ))@t) &&
+   (prk = prk2)) ||
+  (event(eLeakShare( x ))@t))
+.
+(*identity_binding_I*)
+query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
+      subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time, j:time;
+ (event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) ==>
+ (event(eInitiateWithID( subj_i, subj_r ))@j)
+.
+(*identity_binding_R*)
+query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
+      subj_i:bitstring, subj_r:bitstring, y:bitstring, i:time, j:time;
+ (event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) ==>
+ (event(eRespondWithID( subj_i, subj_r ))@j)
+.
 (*secretShares*)
 query k:bitstring, i:time, j:time;
  ((event(eShare( k ))@i) && (attacker( k )@j)) ==> (false)
@@ -140,6 +258,8 @@ let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
       let psk_2:bitstring=get_psk(ID_CRED_PSK_2) in
       let subject_i_2:bitstring=get_subject(CRED_I_2) in
       let subject_r_2:bitstring=get_subject(CRED_R_2) in
+      event eInitiateWithID( subject_i_2, subject_r_2 );
+      event eExposeSubjectI( subject_i_2 );
       event eStart_I( cid_2, method_2, subject_i_2 );
       let G_X_2:bitstring=exp(g, X_2) in
       let m1_2:bitstring=(method_2, (suitesI_2, (G_X_2, (C_I_2, EAD_1_2)))) in
@@ -178,7 +298,13 @@ let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
            let IV_4_2:bitstring=edhoc_kdf(PRK_3e2m_2, snine, TH_4_2, iv_length) in
            let PRK_out_2:bitstring=edhoc_kdf(PRK_4e3m_2, sseven, TH_4_2,
                                              hash_length) in
-           event eDerivedI( cid_2, PRK_out_2, X_2, G_Y_2 );
+           event eDerivedI( cid_2, method_2, subject_i_2, subject_r_2, PRK_out_2,
+                            X_2, G_Y_2
+                 );
+           event eSendIData( PRK_out_2, method_2, subject_i_2, subject_r_2, psk_2,
+                             X_2, G_Y_2,
+                             (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (EAD_3_2, (m1_2, (plaintext_2_2, plaintext_3a_2)))))))))
+                 );
            out(att,m3_2);
            event eTransmitEAD( m3_2, EAD_3_2, PRK_4e3m_2 );
            ((in(att,m4_2:bitstring);
@@ -186,6 +312,10 @@ let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
              let ad_4_2:bitstring=(sEncrypt0, (sempty, external_aad_4_2)) in
              let plaintext_4_2:bitstring=aeaddec(m4_2, K_4_2, IV_4_2, ad_4_2) in
              let EAD_4_2:bitstring=plaintext_4_2 in
+             event eAcceptIData( PRK_out_2, method_2, subject_i_2, subject_r_2, psk_2,
+                                 X_2, G_Y_2,
+                                 (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (EAD_3_2, (m1_2, (plaintext_2_2, (plaintext_3a_2, plaintext_4_2))))))))))
+                   );
              event eAcceptI( cid_2, method_2, subject_i_2, subject_r_2, PRK_out_2,
                              X_2, G_Y_2
                    );
@@ -206,6 +336,8 @@ let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring)=
       let psk_2:bitstring=get_psk(ID_CRED_PSK_2) in
       let subject_i_2:bitstring=get_subject(CRED_I_2) in
       let subject_r_2:bitstring=get_subject(CRED_R_2) in
+      event eRespondWithID( subject_i_2, subject_r_2 );
+      event eExposeSubjectR( subject_r_2 );
       event eStart_R( cid_2, method_2, subject_r_2 );
       let G_Y_2:bitstring=exp(g, Y_2) in
       let G_XY_2:bitstring=exp(G_X_2, Y_2) in
@@ -219,6 +351,9 @@ let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring)=
            event eTHRShared( TH_2_2 );
            event eDerivedRShared( G_XY_2 );
            let m2_2:bitstring=(G_Y_2, encxor(plaintext_2_2, KEYSTREAM_2A_2)) in
+           event eSendRData( method_2, subject_i_2, subject_r_2, psk_2,
+                             (TH_2_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (m1_2, plaintext_2_2)))))
+                 );
            out(att,m2_2);
            in(att,m3_2:bitstring);
            let TH_3_2:bitstring=hash((wrap(TH_2_2), plaintext_2_2)) in
@@ -238,6 +373,7 @@ let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring)=
                 let ad_3_2:bitstring=(sEncrypt0, (sempty, external_aad_3_2)) in
                 let plaintext_3b_2:bitstring=aeaddec(ciphertext_3b_2, K_3_2, IV_3_2,
                                                      ad_3_2) in
+                let EAD_3_2:bitstring=plaintext_3b_2 in
                 let TH_4_2:bitstring=hash((wrap(TH_3_2), (ID_CRED_PSK_2, (plaintext_3b_2, (CRED_I_2, CRED_R_2))))) in
                 let K_4_2:bitstring=edhoc_kdf(PRK_4e3m_2, seight, TH_4_2, key_length) in
                 let IV_4_2:bitstring=edhoc_kdf(PRK_3e2m_2, snine, TH_4_2, iv_length) in
@@ -250,6 +386,10 @@ let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring)=
                 event eTransmitEAD( m4_2, EAD_4_2, PRK_out_2 );
                 event eAcceptR( cid_2, method_2, subject_i_2, subject_r_2, PRK_out_2,
                                 G_X_2, Y_2
+                      );
+                event eAcceptRData( PRK_out_2, method_2, subject_i_2, subject_r_2, psk_2,
+                                    Y_2, G_X_2,
+                                    (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (EAD_3_2, (m1_2, (plaintext_2_2, plaintext_3a_2)))))))))
                       );
                 event eFinishR( cid_2, PRK_out_2 );
                 out(att,m4_2);
@@ -268,8 +408,6 @@ process
      let cred_i_2:bitstring=make_cred(subject_i_4, psk_4) in
      let cred_r_2:bitstring=make_cred(subject_r_4, psk_4) in
      let ID_CRED_PSK_2:bitstring=make_id(cred_i_2, cred_r_2, psk_4) in
-     event eExposeSubjectI( subject_i_4 );
-     event eExposeSubjectR( subject_r_4 );
      !
      (((I(cid_2, method_four, ID_CRED_PSK_2))
      | (!
@@ -282,6 +420,54 @@ WARNING: the following wellformedness checks failed!
 Inexistant lemma actions
 ========================
 
+  lemma `secretR_psk' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
   lemma `honestauthRI_psk_non_inj' references action 
     fact "AcceptR" (arity 7, Linear) 
   but no rule has such an action.
@@ -291,7 +477,7 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `honestauthRI_psk_non_inj' references action 
-    fact "DerivedI" (arity 4, Linear) 
+    fact "DerivedI" (arity 7, Linear) 
   but no rule has such an action.
   
   lemma `honestauthRI_psk_non_inj' references action 
@@ -360,6 +546,126 @@ Inexistant lemma actions
   
   lemma `authIR_psk_unique' references action 
     fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "SendIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "InitiateWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "RespondWithID" (arity 2, Linear) 
   but no rule has such an action.
   
   lemma `secretShares' references action 
@@ -380,6 +686,39 @@ Restriction actions
   restriction `OnlyMethodFour' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
+
+ Formula guardedness
+====================
+
+  lemma `data_authentication_I_to_R' cannot be converted to a guarded formula:
+    unguarded variable(s) 'y', 'gx' in the subformula
+      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
+         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
+        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
+          ) @ #i) ∧
+         (Honest( psk ) @ #j)) ⇒
+        (((∃ #l.
+            (#l < #i) ∧
+            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
+             ) @ #l)) ∨
+          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
+         (∃ #l. LeakShare( x ) @ #l))"
+    in the formula
+      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
+         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
+        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
+          ) @ #i) ∧
+         (Honest( psk ) @ #j)) ⇒
+        (((∃ #l.
+            (#l < #i) ∧
+            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
+             ) @ #l)) ∨
+          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
+         (∃ #l. LeakShare( x ) @ #l))"
 *)
 
 (*
@@ -396,6 +735,54 @@ WARNING: the following wellformedness checks failed!
 Inexistant lemma actions
 ========================
 
+  lemma `secretR_psk' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
   lemma `honestauthRI_psk_non_inj' references action 
     fact "AcceptR" (arity 7, Linear) 
   but no rule has such an action.
@@ -405,7 +792,7 @@ Inexistant lemma actions
   but no rule has such an action.
   
   lemma `honestauthRI_psk_non_inj' references action 
-    fact "DerivedI" (arity 4, Linear) 
+    fact "DerivedI" (arity 7, Linear) 
   but no rule has such an action.
   
   lemma `honestauthRI_psk_non_inj' references action 
@@ -474,6 +861,126 @@ Inexistant lemma actions
   
   lemma `authIR_psk_unique' references action 
     fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "SendIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "InitiateWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "RespondWithID" (arity 2, Linear) 
   but no rule has such an action.
   
   lemma `secretShares' references action 
@@ -494,6 +1001,39 @@ Restriction actions
   restriction `OnlyMethodFour' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
+
+ Formula guardedness
+====================
+
+  lemma `data_authentication_I_to_R' cannot be converted to a guarded formula:
+    unguarded variable(s) 'y', 'gx' in the subformula
+      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
+         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
+        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
+          ) @ #i) ∧
+         (Honest( psk ) @ #j)) ⇒
+        (((∃ #l.
+            (#l < #i) ∧
+            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
+             ) @ #l)) ∨
+          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
+         (∃ #l. LeakShare( x ) @ #l))"
+    in the formula
+      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
+         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
+        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
+                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
+          ) @ #i) ∧
+         (Honest( psk ) @ #j)) ⇒
+        (((∃ #l.
+            (#l < #i) ∧
+            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
+                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
+             ) @ #l)) ∨
+          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
+         (∃ #l. LeakShare( x ) @ #l))"
 *)
 
 (*
