@@ -219,3 +219,19 @@ lemma secretSharesPSK[reuse]: //secrecy of the key
 #endif
 
   
+// ******************************************************************
+// ************** Impersonation   ***********************************
+// ******************************************************************
+
+// Whenever I accept a session, it must be the case that the PSK was honest. 
+// Therefore, no one without the PSK (i.e., a passive attacker) could have 
+// impersonated my peer.
+lemma no_passive_impersonation_I:
+  "All cid m subj_i subj_r prk x gy #i.
+     AcceptI(cid, m, subj_i, subj_r, prk, x, gy)@i
+   ==> (Ex #j psk. Honest(psk)@j)"
+
+lemma no_passive_impersonation_R:
+  "All cid m subj_i subj_r prk y gx #i.
+     AcceptR(cid, m, subj_i, subj_r, prk, y, gx)@i
+   ==> (Ex #j psk. Honest(psk)@j)"

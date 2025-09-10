@@ -6,7 +6,9 @@
  Scenarios to check ideally:
  - `tamarin-prover -D=LeakShare`
  - `tamarin-prover -D=LeakSessionKey`
- - `tamarin-prover -D=LeeakPSK`
+ - `tamarin-prover -D=LeakPSK`
+ - `tamarin-prover -D=LeakIdentityI`
+ - `tamarin-prover -D=LeakIdentityR`
 */
 
 theory edhoc_psk_sapic
@@ -61,7 +63,7 @@ let I(~cid, method, ID_CRED_PSK) =
     let subject_i = get_subject(CRED_I) in
     let subject_r = get_subject(CRED_R) in
     event InitiateWithID(subject_i, subject_r);
-    event ExposeSubjectI(subject_i);
+    // event ExposeSubjectI(subject_i);
 
     event Start_I(~cid, method, subject_i);
 
@@ -148,7 +150,7 @@ let R(~cid, ID_CRED_PSK) =
     let subject_i = get_subject(CRED_I) in
     let subject_r = get_subject(CRED_R) in
     event RespondWithID(subject_i, subject_r);
-    event ExposeSubjectR(subject_r);
+    // event ExposeSubjectR(subject_r);
 
     event Start_R(~cid, method, subject_r);
 
@@ -224,16 +226,14 @@ process:
     let cred_r = make_cred(~subject_r, ~psk) in
     let ID_CRED_PSK = make_id(cred_i, cred_r, ~psk) in
 
-    // event ExposeSubjectI(~subject_i);
-    // event ExposeSubjectR(~subject_r);
-
     (
         !I(~cid, method_four(), ID_CRED_PSK)
         | !R(~cid, ID_CRED_PSK)
         | compromise(~psk)   // optional PSK compromise
+        | LeakSubjectI(~subject_i)
+        | LeakSubjectR(~subject_r)
+        )
     )
-    
-  )
 
 #include "LakePropertiesPSK.splib"
 

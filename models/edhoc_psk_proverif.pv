@@ -239,12 +239,30 @@ query k:bitstring, i:time, j:time, t:time;
  ((event(eSharePSK( k ))@i) && (attacker( k )@j)) ==>
  (event(eCompromise( k ))@t)
 .
+(*no_passive_impersonation_I*)
+query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
+      psk:bitstring, subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time,
+      j:time;
+ (event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) ==>
+ (event(eHonest( psk ))@j)
+.
+(*no_passive_impersonation_R*)
+query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
+      psk:bitstring, subj_i:bitstring, subj_r:bitstring, y:bitstring, i:time,
+      j:time;
+ (event(eAcceptR( cid, m, subj_i, subj_r, prk, y, gx ))@i) ==>
+ (event(eHonest( psk ))@j)
+.
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
 let leakSKey(key_2:bitstring)=
     event eLeakSessionKey( snull ).
 let compromise(psk_2:bitstring)=
     event eCompromise( snull ).
+let LeakSubjectI(subj_i_2:bitstring)=
+    event eExposeSubjectI( snull ).
+let LeakSubjectR(subj_r_2:bitstring)=
+    event eExposeSubjectR( snull ).
 let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
     in(att,(suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)));
     event eMethodOk( method_2 );
@@ -259,7 +277,6 @@ let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
       let subject_i_2:bitstring=get_subject(CRED_I_2) in
       let subject_r_2:bitstring=get_subject(CRED_R_2) in
       event eInitiateWithID( subject_i_2, subject_r_2 );
-      event eExposeSubjectI( subject_i_2 );
       event eStart_I( cid_2, method_2, subject_i_2 );
       let G_X_2:bitstring=exp(g, X_2) in
       let m1_2:bitstring=(method_2, (suitesI_2, (G_X_2, (C_I_2, EAD_1_2)))) in
@@ -337,7 +354,6 @@ let R(cid_2:bitstring, ID_CRED_PSK_2:bitstring)=
       let subject_i_2:bitstring=get_subject(CRED_I_2) in
       let subject_r_2:bitstring=get_subject(CRED_R_2) in
       event eRespondWithID( subject_i_2, subject_r_2 );
-      event eExposeSubjectR( subject_r_2 );
       event eStart_R( cid_2, method_2, subject_r_2 );
       let G_Y_2:bitstring=exp(g, Y_2) in
       let G_XY_2:bitstring=exp(G_X_2, Y_2) in
@@ -411,8 +427,10 @@ process
      !
      (((I(cid_2, method_four, ID_CRED_PSK_2))
      | (!
-        (((R(cid_2, ID_CRED_PSK_2))
-        | (compromise(psk_4))))))))
+        (((((((R(cid_2, ID_CRED_PSK_2))
+            | (compromise(psk_4))))
+          | (LeakSubjectI(subject_i_4))))
+        | (LeakSubjectR(subject_r_4))))))))
 
 (*
 WARNING: the following wellformedness checks failed!
@@ -679,6 +697,22 @@ Inexistant lemma actions
   lemma `secretSharesPSK' references action 
     fact "SharePSK" (arity 1, Linear) 
   but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
 
 Restriction actions
 ===================
@@ -686,39 +720,6 @@ Restriction actions
   restriction `OnlyMethodFour' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
-
- Formula guardedness
-====================
-
-  lemma `data_authentication_I_to_R' cannot be converted to a guarded formula:
-    unguarded variable(s) 'y', 'gx' in the subformula
-      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
-         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
-        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
-                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
-          ) @ #i) ∧
-         (Honest( psk ) @ #j)) ⇒
-        (((∃ #l.
-            (#l < #i) ∧
-            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
-                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
-             ) @ #l)) ∨
-          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
-         (∃ #l. LeakShare( x ) @ #l))"
-    in the formula
-      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
-         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
-        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
-                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
-          ) @ #i) ∧
-         (Honest( psk ) @ #j)) ⇒
-        (((∃ #l.
-            (#l < #i) ∧
-            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
-                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
-             ) @ #l)) ∨
-          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
-         (∃ #l. LeakShare( x ) @ #l))"
 *)
 
 (*
@@ -994,6 +995,22 @@ Inexistant lemma actions
   lemma `secretSharesPSK' references action 
     fact "SharePSK" (arity 1, Linear) 
   but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
 
 Restriction actions
 ===================
@@ -1001,39 +1018,6 @@ Restriction actions
   restriction `OnlyMethodFour' references action 
     fact "MethodOk" (arity 1, Linear) 
   but no rule has such an action.
-
- Formula guardedness
-====================
-
-  lemma `data_authentication_I_to_R' cannot be converted to a guarded formula:
-    unguarded variable(s) 'y', 'gx' in the subformula
-      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
-         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
-        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
-                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
-          ) @ #i) ∧
-         (Honest( psk ) @ #j)) ⇒
-        (((∃ #l.
-            (#l < #i) ∧
-            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
-                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
-             ) @ #l)) ∨
-          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
-         (∃ #l. LeakShare( x ) @ #l))"
-    in the formula
-      "∀ method subject_i subjetc_r x gy y gx psk TH_2 TH_3 TH_4 suitesI
-         EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
-        ((AcceptIData( PRK_out, method, subject_i, subjetc_r, psk, x, gy,
-                       <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3, p4>
-          ) @ #i) ∧
-         (Honest( psk ) @ #j)) ⇒
-        (((∃ #l.
-            (#l < #i) ∧
-            (AcceptRData( PRK_out, method, subject_i, subjetc_r, psk, y, gx,
-                          <TH_2, TH_3, TH_4, suitesI, EAD_1, EAD_2, EAD_3, m1, p2, p3>
-             ) @ #l)) ∨
-          (∃ #l. (#l < #i) ∧ (Compromise( psk ) @ #l))) ∨
-         (∃ #l. LeakShare( x ) @ #l))"
 *)
 
 (*
