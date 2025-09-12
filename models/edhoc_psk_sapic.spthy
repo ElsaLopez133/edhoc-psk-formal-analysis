@@ -212,6 +212,15 @@ let R(~cid, ID_CRED_PSK) =
 
 /* -------------------- Main Process -------------------- */
 
+let compromise(psk) =
+    in('Comp'); event Compromise(psk); event SharePSK(psk); out(psk)
+
+let LeakSubjectI(subj_i) =
+    in('Comp'); event ExposeSubjectI(subj_i); out(subj_i)
+
+let LeakSubjectR(subj_r) =
+    in('Comp'); event ExposeSubjectR(subj_r); out(subj_r)
+
 process:
   new ~psk;
   event Honest(~psk);

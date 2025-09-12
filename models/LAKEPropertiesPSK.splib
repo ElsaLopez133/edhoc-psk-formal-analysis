@@ -130,14 +130,16 @@ lemma pfs_psk:
      AcceptI(cid, m, subj_i, subj_r, prk, x, gy)@i & K(prk)@j & Honest(psk)@k
    ==> (Ex #t. LeakShare(x)@t & t < i)
     | (Ex #t. LeakShare(gy)@t & t < i)
-    | (Ex #t. LeakSessionKey(prk)@t)"
+    | (Ex #t. LeakSessionKey(prk)@t)
+    | (Ex #t. Compromise(psk)@t)"
 
 lemma explicit_key_confirmation_I:
   "All cid m subj_i subj_r prk x gy #i.
      AcceptI(cid, m, subj_i, subj_r, prk, x, gy)@i
    ==> (Ex cid2 prk2 gx2 y2 #t.
           AcceptR(cid2, m, subj_i, subj_r, prk2, gx2, y2)@t & prk = prk2)
-     | (Ex #t. LeakShare(x)@t)"
+     | (Ex #t. LeakShare(x)@t)
+     | (Ex #t psk. Compromise(psk)@t)"
 
 // ******************************************************************
 // ************** Identity binding***********************************

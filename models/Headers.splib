@@ -25,30 +25,30 @@ let leakSKey(key) =
 let leakSKey(key) =  event LeakSessionKey('null')
 #endif
 
-#ifdef LeakPSK
-let compromise(psk) =
-    in('Comp');
-    event Compromise(psk);
-    out(psk)
-#else
-let compromise(psk) = event Compromise('null')
-#endif
+// #ifdef LeakPSK
+// let compromise(psk) =
+//     in('Comp');
+//     event Compromise(psk);
+//     out(psk)
+// #else
+// let compromise(psk) = event Compromise('null')
+// #endif
 
-#ifdef LeakIdentityI
-let LeakSubjectI(subj_i) =
-    event ExposeSubjectI(subj_i);
-    out(subj_i)
-#else
-let LeakSubjectI(subj_i) = event ExposeSubjectI('null')
-#endif
+// #ifdef LeakIdentityI
+// let LeakSubjectI(subj_i) =
+//     event ExposeSubjectI(subj_i);
+//     out(subj_i)
+// #else
+// let LeakSubjectI(subj_i) = event ExposeSubjectI('null')
+// #endif
 
-#ifdef LeakIdentityR
-let LeakSubjectR(subj_r) =
-    event ExposeSubjectR(subj_r);
-    out(subj_r)
-#else
-let LeakSubjectR(subj_r) = event ExposeSubjectR('null')
-#endif
+// #ifdef LeakIdentityR
+// let LeakSubjectR(subj_r) =
+//     event ExposeSubjectR(subj_r);
+//     out(subj_r)
+// #else
+// let LeakSubjectR(subj_r) = event ExposeSubjectR('null')
+// #endif
 
 
 // Not used for the moment
