@@ -1,0 +1,85 @@
+import subprocess
+import csv
+import re
+import time
+import os
+
+# ---- Configuration ----
+lemmas = [
+    "authRI_psk_unique",
+    "authIR_psk_unique",
+    "data_authentication_I_to_R",
+    "data_authentication_R_to_I",
+    "key_agreement_R_implies_I",
+    "key_agreement_I_implies_R",
+    "pfs_psk",
+    "explicit_key_confirmation_I",
+    "identity_binding_I",
+    "identity_binding_R",
+    "no_passive_impersonation_I",
+    "no_passive_impersonation_R",
+    "secrecy_of_identity_R",
+    "secrecy_of_identity_I",
+    "secretR_psk",
+    "secretI_psk",
+    "honestauthRI_psk_non_inj",
+    "honestauthIR_psk_non_inj",
+]
+
+flag_sets = [
+    [],
+    ["-DLeakShare"],
+    # ["-DLeakPSK"],
+    ["-DLeakSessionKey"],
+    # ["-DLeakIdentityI", "-DLeakIdentityR"],
+    ["-DLeakShare", "-DLeakSessionKey"],
+]
+
+tamarin_file = "edhoc_psk_sapic.spthy"
+output_csv = "results/tamarin_results.csv"
+
+
+def run_tamarin(lemma, flags):
+    cmd = [
+        "tamarin-prover",
+        f"--prove={lemma}",
+        tamarin_file,
+        "--derivcheck-timeout=0",
+        "-s=10",
+    ] + flags
+
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    out = proc.stdout + proc.stderr
+
+    # Extract processing time
+    time_match = re.search(r"processing time:\s*([\d.]+)s", out)
+    runtime = float(time_match.group(1)) if time_match else None
+
+    # Extract status + steps
+    line_match = re.search(
+        rf"{lemma} \([^)]+\): (verified|falsified|analysis incomplete) \((\d+) steps\)",
+        out,
+    )
+    if line_match:
+        status = line_match.group(1)
+        steps = int(line_match.group(2))
+    else:
+        status, steps = "not found", None
+
+    return runtime, steps, status, " ".join(flags) if flags else "None"
+
+
+# ---- Create file with header if it doesn't exist ----
+new_file = not os.path.exists(output_csv)
+with open(output_csv, "a", newline="") as f:
+    writer = csv.writer(f)
+    if new_file:
+        writer.writerow(["Lemma", "Status", "Steps", "ProcessingTime(s)", "Flags"])
+
+    for lemma in lemmas:
+        for flags in flag_sets:
+            runtime, steps, status, flag_str = run_tamarin(lemma, flags)
+            writer.writerow([lemma, status, steps, runtime, flag_str])
+            print(f"✅ {lemma} {flag_str} -> {status}, {steps} steps, {runtime:.2f}s")
+
+print(f"\nResults appended to {output_csv}")

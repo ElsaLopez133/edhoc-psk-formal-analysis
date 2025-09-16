@@ -7,13 +7,13 @@ free seleven:bitstring.
 free sempty:bitstring.
 free sfive:bitstring.
 free snine:bitstring.
-free snull:bitstring.
 free sseven:bitstring.
 free sthirteen:bitstring.
 free stwelve:bitstring.
 free stzero:bitstring.
 fun aead_length():bitstring.
 fun aeadenc(bitstring,bitstring,bitstring,bitstring):bitstring.
+fun const_grp():bitstring.
 fun edhoc_kdf(bitstring,bitstring,bitstring,bitstring):bitstring.
 fun encxor(bitstring,bitstring):bitstring.
 fun exp(bitstring,bitstring):bitstring.
@@ -72,8 +72,7 @@ reduc forall cred_i:bitstring, cred_r:bitstring, psk:bitstring;   get_cred_r(mak
 reduc forall cred_i:bitstring, cred_r:bitstring, psk:bitstring;   get_psk(make_id(cred_i, cred_r, psk)) = psk [private].
 reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall psk:bitstring, subject:bitstring;   get_subject(make_cred(subject, psk)) = subject.
-axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
-
+reduc forall x:bitstring;   check_grp(x) = const_grp.
 (*secretR_psk*)
 query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
       psk:bitstring, subj_i:bitstring, subj_r:bitstring, y:bitstring, i:time,
@@ -234,15 +233,6 @@ query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
  (event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) ==>
  (event(eRespondWithID( subj_i, subj_r ))@j)
 .
-(*secretShares*)
-query k:bitstring, i:time, j:time;
- ((event(eShare( k ))@i) && (attacker( k )@j)) ==> (false)
-.
-(*secretSharesPSK*)
-query k:bitstring, i:time, j:time, t:time;
- ((event(eSharePSK( k ))@i) && (attacker( k )@j)) ==>
- (event(eCompromise( k ))@t)
-.
 (*no_passive_impersonation_I*)
 query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
       psk:bitstring, subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time,
@@ -258,9 +248,12 @@ query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
  (event(eHonest( psk ))@j)
 .
 let CompromiseShare(s_2:bitstring)=
-    event eLeakShare( snull ).
+    event eLeakShare( s_2 );
+    event eLeakShare( exp(g, s_2) );
+    out(att,s_2).
 let leakSKey(key_2:bitstring)=
-    event eLeakSessionKey( snull ).
+    event eLeakSessionKey( key_2 );
+    out(att,key_2).
 let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
     in(att,(suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)));
     event eMethodOk( method_2 );
@@ -442,4 +435,3 @@ process
             | (compromise(psk_4))))
           | (LeakSubjectI(subject_i_4))))
         | (LeakSubjectR(subject_r_4))))))))
-

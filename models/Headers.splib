@@ -58,13 +58,13 @@ let leakSKey(key) =  event LeakSessionKey('null')
 // equations: hash(x)=hout
 // #endif
 
-// #ifdef NeutralCheck
-// functions: check_grp/1 [destructor]
-// equations: check_grp(x) = x
-// #else
-// functions: check_grp/1 [destructor], const_grp/0
-// equations: check_grp(x) = const_grp
-// #endif
+#ifdef NeutralCheck
+functions: check_grp/1 [destructor]
+equations: check_grp(x) = x
+#else
+functions: check_grp/1 [destructor], const_grp/0
+equations: check_grp(x) = const_grp
+#endif
 
 
 // #ifdef CredCheck
@@ -81,16 +81,4 @@ let leakSKey(key) =  event LeakSessionKey('null')
 // #else
 // functions: encxor/2, decxor/2  [destructor]
 // equations: decxor(encxor(m,x),x) = m
-// #endif
-
-// This we always enforce
-// #ifdef MethodFour
-
-// export queries:
-// "
-// restriction m:bitstring; event(MethodOk(m)) ==> m=method_four.
-// "
-
-// restriction method_four:
-//  "All x #i. MethodOk(x)@i ==> x=method_four"
 // #endif

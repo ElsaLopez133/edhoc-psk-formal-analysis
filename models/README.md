@@ -5,10 +5,10 @@
 | `edhoc_psk_tamarin.spthy` | Main Tamarin theory modeling EDHOC with PSK |
 | `edhoc_psk_sapic.spthy` | Main SAPIC+ theory modeling EDHOC with PSK |
 | `edhoc_psk_proverif.pv` | Main ProVerif theory modeling EDHOC with PSK |
+| `edhoc_psk_proverif_X.pv` | Main ProVerif theory modeling EDHOC with PSK |
 | `LAKEPropertiesPSK.spthy` | Lemas for SAPIC model |
 
 ---
-
 
 ## 🚀 Running the model using SAPIC+
 
@@ -38,7 +38,7 @@ tamarin-prover --prove=session_key_secrecy edhoc_psk_sapic.spthy
 
 You can change session_key_secrecy to any lemma defined in the file.
 
-The script prove_edhoc.sh can be used to run tamarin adding different parameters. and using different threat models (-DLeakShare -DLeakPSK -DLeakSessionKey -DSanityCheck)
+The script prove_edhoc.sh can be used to run tamarin adding different parameters and using different threat models (-DLeakShare -DLeakPSK -DLeakSessionKey -DSanityCheck)
 
 #### Interactive Mode (Optional)
 
@@ -62,6 +62,11 @@ To run with ProVerif, we first need to convert the file to a ProVerif file:
 
 ```bash
 tamarin-prover edhoc_psk_sapic.spthy -m=proverif > edhoc_psk_proverif.pv
+```
+
+To convert to Proverif with additional flags:
+```bash
+tamarin-prover edhoc_psk_sapic.spthy -DLeakShare -m=proverif > edhoc_psk_proverif.pv
 ```
 
 This transforms the lemmas, expressed in firts-order-logic, into queries, expressed as trace properties.

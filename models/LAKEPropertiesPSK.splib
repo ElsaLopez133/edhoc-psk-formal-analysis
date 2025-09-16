@@ -145,13 +145,6 @@ lemma explicit_key_confirmation_I:
 // ************** Identity binding***********************************
 // ******************************************************************
 
-// Can the attacker learn the subject identity at some time i?
-// lemma secrecy_of_identity_I:
-//   "All subj_i #i. not (K(subj_i)@i)"
-
-// lemma secrecy_of_identity_R:
-//   "All subj_r #i. not (K(subj_r)@i)"
-
 // Whenever the initiator accepts with identities (subj_i, subj_r), 
 // there must exist a corresponding eInitiateWithID(subj_i, subj_r) event earlier in the trace.
 lemma identity_binding_I:
@@ -163,6 +156,20 @@ lemma identity_binding_R:
   "All cid m subj_i subj_r prk gx y #i.
      AcceptR(cid, m, subj_i, subj_r, prk, gx, y)@i
    ==> (Ex #j. RespondWithID(subj_i, subj_r)@j)"
+
+// We want to prove that the protocol gives identity against passive attackers
+// Lemma: Secrecy of Responder's Identity
+lemma secrecy_of_identity_R:
+  "All subj_r #i. 
+    (HonestSubjectR(subj_r) @i
+    & not(Ex #k. ExposeSubjectR(subj_r) @k)) 
+    ==> not(Ex #j. K(subj_r) @j)"
+
+lemma secrecy_of_identity_I:
+  "All subj_i #i. 
+     (HonestSubjectI(subj_i) @i 
+      & not(Ex #k. ExposeSubjectI(subj_i) @k))
+    ==> not(Ex #j. K(subj_i) @j)"
 
 // ******************************************************************
 // ************** Distinctness (concurrent sessions) **************

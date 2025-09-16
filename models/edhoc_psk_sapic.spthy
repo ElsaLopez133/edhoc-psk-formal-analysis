@@ -82,7 +82,10 @@ let I(~cid, method, ID_CRED_PSK) =
     let plaintext_2 = decxor(CIPHERTEXT_2, KEYSTREAM_2A) in
     let < C_R, EAD_2> = plaintext_2 in
 
-    if method = method_four() then (
+    // if (check_grp(G_Y) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
+    //    0
+    // else 
+      if method = method_four() then (
         let PRK_3e2m = PRK_2e in
         event DerivedIShared(G_YX);
 
@@ -110,7 +113,7 @@ let I(~cid, method, ID_CRED_PSK) =
 
         out(m3);
         event TransmitEAD(m3, ~EAD_3, PRK_4e3m);
-        
+      
         ( 
             (
                 in(m4);
@@ -126,7 +129,7 @@ let I(~cid, method, ID_CRED_PSK) =
             |
             leakSKey(PRK_out)
         )
-    ) else (0)
+      ) else (0)
   )
 
 /* -------------------- Responder -------------------- */
@@ -160,6 +163,10 @@ let R(~cid, ID_CRED_PSK) =
     let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
     let TH_2 = hash(<wrap(G_Y), wrap(TH_1)>) in
     let PRK_2e = hkdfextract(TH_2, G_XY) in
+
+    // if (check_grp(G_X) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
+    //    0
+    // else 
 
     if method = method_four() then (
       let plaintext_2 = <C_R, EAD_2> in
@@ -230,6 +237,8 @@ process:
     new ~cid;
     new ~subject_i;
     new ~subject_r;
+    event HonestSubjectI(~subject_i);
+    event HonestSubjectR(~subject_r);
 
     let cred_i = make_cred(~subject_i, ~psk) in
     let cred_r = make_cred(~subject_r, ~psk) in
@@ -238,7 +247,7 @@ process:
     (
         !I(~cid, method_four(), ID_CRED_PSK)
         | !R(~cid, ID_CRED_PSK)
-        | compromise(~psk)   // optional PSK compromise
+        | compromise(~psk)
         | LeakSubjectI(~subject_i)
         | LeakSubjectR(~subject_r)
         )
