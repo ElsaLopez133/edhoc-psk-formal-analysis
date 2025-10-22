@@ -7,6 +7,7 @@ free seleven:bitstring.
 free sempty:bitstring.
 free sfive:bitstring.
 free snine:bitstring.
+free snull:bitstring.
 free sseven:bitstring.
 free sthirteen:bitstring.
 free stwelve:bitstring.
@@ -49,6 +50,8 @@ event eExposeSubjectR(bitstring).
 event eFinishI(bitstring,bitstring).
 event eFinishR(bitstring,bitstring).
 event eHonest(bitstring).
+event eHonestSubjectI(bitstring).
+event eHonestSubjectR(bitstring).
 event eInitiateWithID(bitstring,bitstring).
 event eLeakEAD(bitstring).
 event eLeakSessionKey(bitstring).
@@ -80,10 +83,11 @@ query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
  (((event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) &&
    (attacker( prk )@j)) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eCompromise( psk ))@t) && (t < i)) ||
-    (event(eLeakSessionKey( prk ))@t)) ||
-   (event(eLeakShare( y ))@t)) ||
-  (event(eLeakShare( gx ))@t))
+ ((((((event(eCompromise( psk ))@t) && (t < i)) ||
+     (event(eLeakSessionKey( prk ))@t)) ||
+    (event(eLeakShare( y ))@t)) ||
+   (event(eLeakShare( gx ))@t)) ||
+  (event(eExposeSubjectR( subj_r ))@t))
 .
 (*secretI_psk*)
 query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
@@ -92,10 +96,11 @@ query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
  (((event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) &&
    (attacker( prk )@j)) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eCompromise( psk ))@t) && (t < i)) ||
-    (event(eLeakSessionKey( prk ))@t)) ||
-   (event(eLeakShare( gy ))@t)) ||
-  (event(eLeakShare( x ))@t))
+ ((((((event(eCompromise( psk ))@t) && (t < i)) ||
+     (event(eLeakSessionKey( prk ))@t)) ||
+    (event(eLeakShare( gy ))@t)) ||
+   (event(eLeakShare( x ))@t)) ||
+  (event(eExposeSubjectI( subj_i ))@t))
 .
 (*honestauthRI_psk_non_inj*)
 query cid:bitstring, cid2:bitstring, gx:bitstring, gy2:bitstring,
@@ -104,11 +109,12 @@ query cid:bitstring, cid2:bitstring, gx:bitstring, gy2:bitstring,
       k:time, t:time;
  ((event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eDerivedI( cid2, m, subj_i, subj_r, prk2, x2, gy2 ))@t) &&
-     (t < i)) &&
-    (prk = prk2)) ||
-   ((event(eCompromise( psk ))@t) && (t < i))) ||
-  (event(eLeakShare( y ))@t))
+ ((((((event(eDerivedI( cid2, m, subj_i, subj_r, prk2, x2, gy2 ))@t) &&
+      (t < i)) &&
+     (prk = prk2)) ||
+    ((event(eCompromise( psk ))@t) && (t < i))) ||
+   (event(eLeakShare( y ))@t)) ||
+  (event(eExposeSubjectR( subj_r ))@t))
 .
 (*honestauthIR_psk_non_inj*)
 query cid:bitstring, cid2:bitstring, gx2:bitstring, gy:bitstring,
@@ -117,11 +123,12 @@ query cid:bitstring, cid2:bitstring, gx2:bitstring, gy:bitstring,
       j:time, k:time, t:time;
  ((event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eAcceptR( cid2, m, subj_i, subj_r, prk2, gx2, y2 ))@j) &&
-     (j < i)) &&
-    (prk = prk2)) ||
-   ((event(eCompromise( psk ))@t) && (t < i))) ||
-  (event(eLeakShare( x ))@t))
+ ((((((event(eAcceptR( cid2, m, subj_i, subj_r, prk2, gx2, y2 ))@j) &&
+      (j < i)) &&
+     (prk = prk2)) ||
+    ((event(eCompromise( psk ))@t) && (t < i))) ||
+   (event(eLeakShare( x ))@t)) ||
+  (event(eExposeSubjectI( subj_i ))@t))
 .
 (*authRI_psk_unique*)
 query cid1:bitstring, cid2:bitstring, gx1:bitstring, gx2:bitstring,
@@ -205,10 +212,11 @@ query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
  (((event(eAcceptI( cid, m, subj_i, subj_r, prk, x, gy ))@i) &&
    (attacker( prk )@j)) &&
   (event(eHonest( psk ))@k)) ==>
- (((((event(eLeakShare( x ))@t) && (t < i)) ||
-    ((event(eLeakShare( gy ))@t) && (t < i))) ||
-   (event(eLeakSessionKey( prk ))@t)) ||
-  (event(eCompromise( psk ))@t))
+ ((((((event(eLeakShare( x ))@t) && (t < i)) ||
+     ((event(eLeakShare( gy ))@t) && (t < i))) ||
+    (event(eLeakSessionKey( prk ))@t)) ||
+   (event(eCompromise( psk ))@t)) ||
+  (event(eExposeSubjectI( subj_i ))@t))
 .
 (*explicit_key_confirmation_I*)
 query cid:bitstring, cid2:bitstring, gx2:bitstring, gy:bitstring,
@@ -233,6 +241,16 @@ query cid:bitstring, gx:bitstring, m:bitstring, prk:bitstring,
  (event(eAcceptR( cid, m, subj_i, subj_r, prk, gx, y ))@i) ==>
  (event(eRespondWithID( subj_i, subj_r ))@j)
 .
+(*secrecy_of_identity_R*)
+(*∃ subj_r #i.
+   ((HonestSubjectR( subj_r ) @ #i) ∧
+    (¬(∃ #k. ExposeSubjectR( subj_r ) @ #k))) ∧
+   (∃ #j. K( subj_r ) @ #j)*)
+(*secrecy_of_identity_I*)
+(*∃ subj_i #i.
+   ((HonestSubjectI( subj_i ) @ #i) ∧
+    (¬(∃ #k. ExposeSubjectI( subj_i ) @ #k))) ∧
+   (∃ #j. K( subj_i ) @ #j)*)
 (*no_passive_impersonation_I*)
 query cid:bitstring, gy:bitstring, m:bitstring, prk:bitstring,
       psk:bitstring, subj_i:bitstring, subj_r:bitstring, x:bitstring, i:time,
@@ -252,8 +270,7 @@ let CompromiseShare(s_2:bitstring)=
     event eLeakShare( exp(g, s_2) );
     out(att,s_2).
 let leakSKey(key_2:bitstring)=
-    event eLeakSessionKey( key_2 );
-    out(att,key_2).
+    event eLeakSessionKey( snull ).
 let I(cid_2:bitstring, method_2:bitstring, ID_CRED_PSK_2:bitstring)=
     in(att,(suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)));
     event eMethodOk( method_2 );
@@ -418,13 +435,15 @@ let LeakSubjectR(subj_r_2:bitstring)=
 
 
 process
-    new psk_4:bitstring;
-    event eHonest( psk_4 );
-    event eSharePSK( psk_4 );
     !
-    (new cid_2:bitstring;
+    (new psk_4:bitstring;
+     event eHonest( psk_4 );
+     event eSharePSK( psk_4 );
+     new cid_2:bitstring;
      new subject_i_4:bitstring;
      new subject_r_4:bitstring;
+     event eHonestSubjectI( subject_i_4 );
+     event eHonestSubjectR( subject_r_4 );
      let cred_i_2:bitstring=make_cred(subject_i_4, psk_4) in
      let cred_r_2:bitstring=make_cred(subject_r_4, psk_4) in
      let ID_CRED_PSK_2:bitstring=make_id(cred_i_2, cred_r_2, psk_4) in
@@ -436,3 +455,662 @@ process
           | (LeakSubjectI(subject_i_4))))
         | (LeakSubjectR(subject_r_4))))))))
 
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `secretR_psk' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "SendIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "InitiateWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "RespondWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_R' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_R' references action 
+    fact "HonestSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_I' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_I' references action 
+    fact "HonestSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 2.7.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2024-10-30 14:56:23.355649243 UTC
+*)
+
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `secretR_psk' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretR_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secretI_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthRI_psk_non_inj' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `honestauthIR_psk_non_inj' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authRI_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `authIR_psk_unique' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_I_to_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "AcceptRData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `data_authentication_R_to_I' references action 
+    fact "SendIData" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "DerivedI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_R_implies_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `key_agreement_I_implies_R' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakSessionKey" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `pfs_psk' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `explicit_key_confirmation_I' references action 
+    fact "LeakShare" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_I' references action 
+    fact "InitiateWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `identity_binding_R' references action 
+    fact "RespondWithID" (arity 2, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_R' references action 
+    fact "ExposeSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_R' references action 
+    fact "HonestSubjectR" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_I' references action 
+    fact "ExposeSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `secrecy_of_identity_I' references action 
+    fact "HonestSubjectI" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "AcceptI" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_I' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "AcceptR" (arity 7, Linear) 
+  but no rule has such an action.
+  
+  lemma `no_passive_impersonation_R' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 2.7.1
+Git revision: UNKNOWN, branch: UNKNOWN
+Compiled at: 2024-10-30 14:56:23.355649243 UTC
+*)

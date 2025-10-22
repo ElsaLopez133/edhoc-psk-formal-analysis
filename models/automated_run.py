@@ -3,6 +3,7 @@ import csv
 import re
 import time
 import os
+from datetime import datetime 
 
 # ---- Configuration ----
 lemmas = [
@@ -36,7 +37,8 @@ flag_sets = [
 ]
 
 tamarin_file = "edhoc_psk_sapic.spthy"
-output_csv = "results/tamarin_results.csv"
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+output_csv = f"results/tamarin_results_{timestamp}.csv"
 
 
 def run_tamarin(lemma, flags):

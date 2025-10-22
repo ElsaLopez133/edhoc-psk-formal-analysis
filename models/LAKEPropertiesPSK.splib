@@ -33,7 +33,8 @@ lemma secretR_psk:
    ==> (Ex #t. Compromise(psk)@t & t < i)
     | (Ex #t. LeakSessionKey(prk)@t)
     | (Ex #t. LeakShare(y)@t)
-    | (Ex #t. LeakShare(gx)@t)"
+    | (Ex #t. LeakShare(gx)@t)
+    | (Ex #t. ExposeSubjectR(subj_r)@t)"
 
 lemma secretI_psk:
   "All cid m subj_i subj_r prk x gy psk #i #j #k.
@@ -41,7 +42,8 @@ lemma secretI_psk:
    ==> (Ex #t. Compromise(psk)@t & t < i)
     | (Ex #t. LeakSessionKey(prk)@t)
     | (Ex #t. LeakShare(gy)@t)
-    | (Ex #t. LeakShare(x)@t)"
+    | (Ex #t. LeakShare(x)@t)
+    | (Ex #t. ExposeSubjectI(subj_i)@t)"
 
 
 // ******************************************************************
@@ -56,7 +58,8 @@ lemma honestauthRI_psk_non_inj:
    ==> (Ex cid2 prk2 x2 gy2 #t.
           DerivedI(cid2,m, subj_i, subj_r, prk2, x2, gy2)@t & t < i & prk = prk2)   // honest case
     | (Ex #t. Compromise(psk)@t & t < i)                                          // psk compromised
-    | (Ex #t. LeakShare(y)@t)"                
+    | (Ex #t. LeakShare(y)@t)
+    | (Ex #t. ExposeSubjectR(subj_r)@t)"                
 
 lemma honestauthIR_psk_non_inj:
   "All cid m subj_i subj_r prk x gy psk #i #k.
@@ -64,7 +67,8 @@ lemma honestauthIR_psk_non_inj:
    ==> (Ex cid2 prk2 gx2 y2 #j.
           AcceptR(cid2, m, subj_i, subj_r, prk2, gx2, y2)@j & j < i & prk = prk2)  // honest case
     | (Ex #t. Compromise(psk)@t & t < i)                                          // psk compromised
-    | (Ex #t. LeakShare(x)@t)"       
+    | (Ex #t. LeakShare(x)@t)
+    | (Ex #t. ExposeSubjectI(subj_i)@t)"       
 
 // injectivity 
 lemma authRI_psk_unique:
@@ -131,7 +135,8 @@ lemma pfs_psk:
    ==> (Ex #t. LeakShare(x)@t & t < i)
     | (Ex #t. LeakShare(gy)@t & t < i)
     | (Ex #t. LeakSessionKey(prk)@t)
-    | (Ex #t. Compromise(psk)@t)"
+    | (Ex #t. Compromise(psk)@t)
+    | (Ex #t. ExposeSubjectI(subj_i)@t)"
 
 lemma explicit_key_confirmation_I:
   "All cid m subj_i subj_r prk x gy #i.

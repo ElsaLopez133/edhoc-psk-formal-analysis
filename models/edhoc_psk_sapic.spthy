@@ -229,11 +229,11 @@ let LeakSubjectR(subj_r) =
     in('Comp'); event ExposeSubjectR(subj_r); out(subj_r)
 
 process:
-  new ~psk;
-  event Honest(~psk);
-  event SharePSK(~psk);
-
   !(
+    new ~psk;
+    event Honest(~psk);
+    event SharePSK(~psk);
+    
     new ~cid;
     new ~subject_i;
     new ~subject_r;

@@ -56,6 +56,14 @@ If it fails to open a window, you're likely missing GUI/X11 support — run loca
 ssh -X user@host
 ```
 
+### Automated running
+
+To run all the lemmas and calculate the time and steps, there is a python script (automated_run.py). To run it:
+
+```bash
+python3 automated_run.py
+```
+
 ### Running the ProVerif Model
 
 To run with ProVerif, we first need to convert the file to a ProVerif file:
