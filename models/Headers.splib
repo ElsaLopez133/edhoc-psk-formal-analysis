@@ -15,10 +15,11 @@ let CompromiseShare(s) = event LeakShare('null'); 0
 export queries:
 "
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
+set preciseActions=true.
 "
 #endif
 
-#ifdef LeakSessionKey
+#ifdef LeakSKey
 let leakSKey(key) =
  event LeakSessionKey(key); out(key)
 #else

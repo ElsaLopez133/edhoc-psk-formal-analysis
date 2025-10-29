@@ -44,6 +44,8 @@ equations:
 
 #include "Headers.splib"
 
+heuristic:s
+
 /* -------------------- Initiator -------------------- */
 let I(~cid, method, ID_CRED_PSK) =
   in(<suitesI,C_I,EAD_1>);
@@ -108,7 +110,7 @@ let I(~cid, method, ID_CRED_PSK) =
         let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
         let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
         let PRK_out = edhoc_kdf(PRK_4e3m,'seven', TH_4, hash_length) in
-        event DerivedI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y);
+        event DerivedI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y, psk);
         event SendIData(PRK_out,method, subject_i, subject_r, psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a>);
 
         out(m3);
@@ -122,7 +124,7 @@ let I(~cid, method, ID_CRED_PSK) =
                 let plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4) in
                 let EAD_4 = plaintext_4 in
                 event AcceptIData(PRK_out,method, subject_i, subject_r, psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a, plaintext_4>);
-                event AcceptI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y);
+                event AcceptI(~cid, method, subject_i, subject_r, PRK_out, ~X, G_Y, psk);
                 event FinishI(~cid, PRK_out);
                 0
             )
@@ -202,9 +204,9 @@ let R(~cid, ID_CRED_PSK) =
         let external_aad_4 = <TH_4> in
         let ad_4 = <'Encrypt0','empty',external_aad_4> in
         let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
-        event DerivedR(~cid,PRK_out,~Y,G_X);
+        event DerivedR(~cid,PRK_out,~Y,G_X, psk);
         event TransmitEAD(m4, ~EAD_4, PRK_out);
-        event AcceptR(~cid, method, subject_i, subject_r, PRK_out, G_X, ~Y);
+        event AcceptR(~cid, method, subject_i, subject_r, PRK_out, G_X, ~Y, psk);
         event AcceptRData(PRK_out,method, subject_i, subject_r,psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
         event FinishR(~cid, PRK_out);
         out(m4);
@@ -254,6 +256,88 @@ process:
     )
 
 #include "LakePropertiesPSK.splib"
+
+// === Diff-equivalence (initiator anonymity, passive attacker) ===
+
+#ifdef diffEquiv
+
+diffEquivLemma: // Anonymity as a diff equivalence
+!(
+  new ~psk;
+  event Honest(~psk);
+  new ~cid;
+  new ~subject_i; new ~subject_r; new ~subject_i2;
+  event HonestSubjectI(~subject_i);
+  event HonestSubjectI(~subject_i2);
+  event HonestSubjectR(~subject_r);
+
+  let cred_i = make_cred(~subject_i, ~psk) in
+  let cred_i2 = make_cred(~subject_i2, ~psk) in
+  let cred_r = make_cred(~subject_r, ~psk) in
+  let id_cred_psk = make_id(cred_i, cred_r, ~psk) in
+  let id_cred_psk2 = make_id(cred_i2, cred_r, ~psk) in
+
+  // out(<id_cred_psk>);
+
+  (
+    ! I(~cid, method_four(), diff(id_cred_psk, id_cred_psk2))
+  | ! R(~cid,id_cred_psk)
+    // passive attacker -> do NOT include compromise(~psk)
+  )
+)
+
+#endif
+
+
+// === Equivalence (initiator anonymity, passive attacker) ===
+
+#ifdef EquivLemmas
+
+equivLemma:
+(
+  new ~psk1;
+  event Honest(~psk1);
+  new ~cid1;
+  new ~subject_i1; new ~subject_r1;
+  event HonestSubjectI(~subject_i1);
+  event HonestSubjectR(~subject_r1);
+
+  let cred_i1 = make_cred(~subject_i1, ~psk1) in
+  let cred_r1 = make_cred(~subject_r1, ~psk1) in
+  let id_cred_psk1 = make_id(cred_i1, cred_r1, ~psk1) in
+
+  out(<id_cred_psk1>);
+
+  (
+     I(~cid1, method_four(), id_cred_psk1)
+  |  R(~cid1, id_cred_psk1)
+    // passive attacker -> do NOT include compromise(~psk1)
+  )
+)
+
+(
+  new ~psk2;
+  event Honest(~psk2);
+  new ~cid2;
+  new ~subject_i2; new ~subject_r2;
+  event HonestSubjectI(~subject_i2);
+  event HonestSubjectR(~subject_r2);
+
+  let cred_i2 = make_cred(~subject_i2, ~psk2) in
+  let cred_r2 = make_cred(~subject_r2, ~psk2) in
+  let id_cred_psk2 = make_id(cred_i2, cred_r2, ~psk2) in
+
+  out(<id_cred_psk2>);
+
+  (
+     I(~cid2, method_four(), id_cred_psk2)
+  |  R(~cid2, id_cred_psk2)
+  )
+)
+
+#endif
+
+/* -------------------- Restrictions -------------------- */
 
 restriction OnlyMethodFour:
   "All method #i. MethodOk(method) @i ==> method = method_four()"
