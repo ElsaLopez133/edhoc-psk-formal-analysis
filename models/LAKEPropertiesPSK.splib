@@ -159,13 +159,18 @@ lemma key_agreement_I_implies_R:
 // Weaker version (compatible wih Proverif)
 // if attacker knows prk then compromise (or ephemeral leak) happened before/at session
 lemma weak_pfs:
-  "All cid m subj_i subj_r prk psk y gx #i #j #k.
-    AcceptR(cid, m, subj_i, subj_r, prk, gx, y, psk)@i & K(prk)@j & Honest(psk)@k  
+  "All cid m subj_i subj_r prk psk gy x #i #j #k.
+    AcceptI(cid, m, subj_i, subj_r, prk, x, gy, psk)@i & K(prk)@j & Honest(psk)@k  
    ==> 
-  //  (Ex #t. LeakShare(x)@t & t < i)
-    // | (Ex #t. LeakShare(gy)@t & t < i)
+    (Ex #t. LeakShare(x)@t)
+    | 
+    (Ex #t. LeakShare(gy)@t)
+    | 
     (Ex #t. LeakSessionKey(prk)@t)
-    | (Ex #t.  t<i & Compromise(psk)@t)
+    | 
+    (Ex #t.  t<i & Compromise(psk)@t)
+    |
+    ( Ex #t. ExposeSubjectI(subj_i)@t & t < i)
     "
 
 // If an honest session derived a session key prk at time i, and the long-term PSK 
