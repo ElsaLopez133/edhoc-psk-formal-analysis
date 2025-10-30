@@ -5,7 +5,7 @@
 
  Scenarios to check ideally:
  - `tamarin-prover -D=LeakShare`
- - `tamarin-prover -D=LeakSessionKey`
+ - `tamarin-prover -D=LeakSKey`
  - `tamarin-prover -D=LeakPSK`
  - `tamarin-prover -D=LeakIdentityI`
  - `tamarin-prover -D=LeakIdentityR`

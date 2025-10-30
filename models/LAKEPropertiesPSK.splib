@@ -74,20 +74,44 @@ lemma honestauthIR_psk_non_inj:
     "       
 
 // injectivity 
-lemma authRI_psk_unique:
+// lemma authRI_psk_unique:
+//   "All cid1 cid2 m subj_i subj_r prk gx1 gx2 y1 y2 psk #i #j #k.
+//      AcceptR(cid1, m, subj_i, subj_r, prk, gx1, y1, psk)@i &
+//      AcceptR(cid2, m, subj_i, subj_r, prk, gx2, y2, psk)@j & Honest(psk)@k
+//    ==> (Ex #t. Compromise(psk)@t)
+//     | (Ex #t. Honest(psk)@t &    #i = #j)" // hack, dumb honest event added due to restrictions on exportable lemmas to proverif
+
+// lemma authIR_psk_unique:
+//   "All cid1 cid2 m subj_i subj_r prk x1 x2 gy1 gy2 psk #i #j #k.
+//      AcceptI(cid1, m, subj_i, subj_r, prk, x1, gy1, psk)@i &
+//      AcceptI(cid2, m, subj_i, subj_r, prk, x2, gy2, psk)@j & Honest(psk)@k
+//    ==> (Ex #t. Compromise(psk)@t)
+//     | (Ex #t. Honest(psk)@t &    #i = #j)" // hack, dumb honest event added due to restrictions on exportable lemmas to proverif
+
+
+// injectivity 
+
+lemma authR_injective:
   "All cid1 cid2 m subj_i subj_r prk gx1 gx2 y1 y2 psk #i #j #k.
-     AcceptR(cid1, m, subj_i, subj_r, prk, gx1, y1, psk)@i &
-     AcceptR(cid2, m, subj_i, subj_r, prk, gx2, y2, psk)@j & Honest(psk)@k
-   ==> (Ex #t. Compromise(psk)@t)
-    | (Ex #t. Honest(psk)@t &    #i = #j)" // hack, dumb honest event added due to restrictions on exportable lemmas to proverif
+     AcceptR(cid1, m, subj_i, subj_r, prk, gx1, y1, psk)@i
+     & AcceptR(cid2, m, subj_i, subj_r, prk, gx2, y2, psk)@j
+     & Honest(psk)@k
+   ==>
+     i = j
+     | (Ex #t. Compromise(psk)@t & t < i)
+     | (Ex #t. Compromise(psk)@t & t < j)
+  "
 
-lemma authIR_psk_unique:
+lemma authI_injective:
   "All cid1 cid2 m subj_i subj_r prk x1 x2 gy1 gy2 psk #i #j #k.
-     AcceptI(cid1, m, subj_i, subj_r, prk, x1, gy1, psk)@i &
-     AcceptI(cid2, m, subj_i, subj_r, prk, x2, gy2, psk)@j & Honest(psk)@k
-   ==> (Ex #t. Compromise(psk)@t)
-    | (Ex #t. Honest(psk)@t &    #i = #j)" // hack, dumb honest event added due to restrictions on exportable lemmas to proverif
-
+     AcceptI(cid1, m, subj_i, subj_r, prk, x1, gy1, psk)@i
+     & AcceptI(cid2, m, subj_i, subj_r, prk, x2, gy2, psk)@j
+     & Honest(psk)@k
+   ==>
+     i = j
+     | (Ex #t. Compromise(psk)@t & t < i)
+     | (Ex #t. Compromise(psk)@t & t < j)
+  "
 
 lemma data_authentication_I_to_R: 
     "All method subject_i subjetc_r x gy psk TH_2 TH_3 TH_4 suitesI EAD_1 EAD_2 EAD_3 m1 p2 p3 p4 #i #j PRK_out.
@@ -132,16 +156,39 @@ lemma key_agreement_I_implies_R:
 
 // PASSED 
 
-lemma pfs_psk:
-  "All cid1 m subj_i subj_r prk x gy psk y gx cid2 #i #j #k #w.
-     AcceptI(cid1, m, subj_i, subj_r, prk, x, gy, psk)@i & K(prk)@j & Honest(psk)@k 
-     & AcceptR(cid2, m, subj_i, subj_r, prk, gx, y, psk)@w 
+// Weaker version (compatible wih Proverif)
+// if attacker knows prk then compromise (or ephemeral leak) happened before/at session
+lemma weak_pfs:
+  "All cid m subj_i subj_r prk psk y gx #i #j #k.
+    AcceptR(cid, m, subj_i, subj_r, prk, gx, y, psk)@i & K(prk)@j & Honest(psk)@k  
    ==> 
   //  (Ex #t. LeakShare(x)@t & t < i)
     // | (Ex #t. LeakShare(gy)@t & t < i)
     (Ex #t. LeakSessionKey(prk)@t)
-    | (Ex #t. Compromise(psk)@t)
+    | (Ex #t.  t<i & Compromise(psk)@t)
     "
+
+// If an honest session derived a session key prk at time i, and the long-term PSK 
+// is compromised later at time j > i, the attacker still never learns prk
+lemma strong_pfs:
+  "All cid m subj_i subj_r prk psk gy x #i #j.
+     AcceptI(cid, m, subj_i, subj_r, prk, x, gy, psk)@i 
+     & Compromise(psk)@j & i < j
+   ==>
+     ( not (Ex #t. K(prk)@t))
+     |
+    // make_cred and make_id use subject_x and psk, so if the psk is compromised
+    // and the subject_x as well, then the attacker can create valid credentials
+    // and valid id_cred_psk
+     ( Ex #t. ExposeSubjectI(subj_i)@t & t < i)
+     |
+     (Ex #t. LeakSessionKey(prk)@t)
+     |
+     (Ex #t. LeakShare(x)@t)
+     |
+     (Ex #t. LeakShare(gy)@t)
+  "
+
 
 lemma explicit_key_confirmation_I:
   "All cid m subj_i subj_r prk x gy psk #i.
