@@ -216,6 +216,16 @@ lemma identity_binding_R:
      AcceptR(cid, m, subj_i, subj_r, prk, gx, y, psk)@i
    ==> (Ex #j. RespondWithID(subj_i, subj_r)@j)"
 
+lemma no_misbinding:
+  "All cid_I cid_R m prk subj_iI subj_rI
+    subj_iR subj_rR psk_I psk_R gx y x gy #i #j #k #l.
+    AcceptI(cid_I, m, subj_iI, subj_rI, prk, x, gy, psk_I)@i &
+    AcceptR(cid_R, m, subj_iR, subj_rR, prk, gx, y, psk_R)@j &
+    Honest(psk_I) @k &
+    Honest(psk_R) @l
+    ==> (subj_iI = subj_iR) & (subj_rI = subj_rR) & (psk_I = psk_R)
+  "
+
 // We want to prove that the protocol gives identity against passive attackers
 // Lemma: Secrecy of Responder's Identity
 // lemma secrecy_of_identity_R:
