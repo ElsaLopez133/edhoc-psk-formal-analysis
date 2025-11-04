@@ -1,10 +1,34 @@
 // headers.splib for EDHOC-PSK (method_four)
 // We include here the attacker capabilities
 
+// functions:
+//   grpid/0,         // neutral/invalid element (always defined)
+//   check_grp/1 [destructor];
+
 #ifdef WeakAEAD
 functions: aeadmalleable/2
 equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
 #endif
+
+// #ifdef NeutralCheck
+// functions:
+//   grpid/0,         // neutral/invalid element (always defined)
+//   check_grp/1 [destructor];
+// equations:
+//   // In this configuration we accept *real* points; the attacker must
+//   // explicitly supply 'invalid_point' to trigger a failure.
+//   check_grp(invalid_point) = grpid.
+//   check_grp(x) = x.
+// #else
+// functions:
+//   grpid/0,         // neutral/invalid element (always defined)
+//   check_grp/1 [destructor];
+// equations:
+//   // In this configuration we *simulate missing check* by mapping everything
+//   // to grpid (so the branch `if (check_grp(..) = grpid)` will be true).
+//   check_grp(x) = grpid.
+// #endif
+
 
 #ifdef LeakShare
 let CompromiseShare(s) =

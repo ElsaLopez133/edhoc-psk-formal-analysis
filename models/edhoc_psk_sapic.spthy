@@ -27,9 +27,9 @@ functions:
   encxor/2, decxor/2 [destructor],
 
   // Credential modeling functions
-  make_cred/2,        // make_cred(subject_id, psk) -> credential
+  make_cred/2, // [private],      // make_cred(subject_id, psk) -> credential
   get_subject/1 [destructor],      // get_subject(credential) -> subject_id
-  make_id/3,           // make_id(cred_i, cred_r, psk) -> ID_CRED_PSK
+  make_id/3, // [private]           // make_id(cred_i, cred_r, psk) -> ID_CRED_PSK
   get_cred_i/1 [destructor, private],  // get_cred_i(ID_CRED_PSK) -> cred_i
   get_cred_r/1 [destructor, private],  // get_cred_r(ID_CRED_PSK) -> cred_r
   get_psk/1 [destructor, private]      // get_psk(ID_CRED_PSK) -> psk
@@ -85,7 +85,7 @@ let I(~cid, method, ID_CRED_PSK) =
     let < C_R, EAD_2> = plaintext_2 in
 
     // if (check_grp(G_Y) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
-    //    0
+      //  0
     // else 
       if method = method_four() then (
         let PRK_3e2m = PRK_2e in
@@ -167,7 +167,7 @@ let R(~cid, ID_CRED_PSK) =
     let PRK_2e = hkdfextract(TH_2, G_XY) in
 
     // if (check_grp(G_X) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
-    //    0
+      //  0
     // else 
 
     if method = method_four() then (
