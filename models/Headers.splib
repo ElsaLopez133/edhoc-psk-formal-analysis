@@ -5,10 +5,10 @@
 //   grpid/0,         // neutral/invalid element (always defined)
 //   check_grp/1 [destructor];
 
-#ifdef WeakAEAD
-functions: aeadmalleable/2
-equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
-#endif
+// #ifdef WeakAEAD
+// functions: aeadmalleable/2
+// equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
+// #endif
 
 // #ifdef NeutralCheck
 // functions:

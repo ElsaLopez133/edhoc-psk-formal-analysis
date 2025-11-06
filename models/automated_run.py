@@ -22,8 +22,8 @@ lemmas = [
     "no_passive_impersonation_R",
     "secretR_psk",
     "secretI_psk",
-    "honestauthRI_psk_non_inj",
-    "honestauthIR_psk_non_inj",
+    "authRI_psk_non_inj",
+    "authIR_psk_non_inj",
 ]
 
 flag_sets = [
