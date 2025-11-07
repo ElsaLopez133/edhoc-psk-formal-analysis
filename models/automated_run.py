@@ -7,23 +7,23 @@ from datetime import datetime
 
 # ---- Configuration ----
 lemmas = [
-    "authR_injective",
-    "authI_injective",
-    "data_authentication_I_to_R",
-    "data_authentication_R_to_I",
-    "key_agreement_R_implies_I",
-    "key_agreement_I_implies_R",
+    # "data_authentication_I_to_R",
+    # "data_authentication_R_to_I",
+    "key_agreement_implicit",
+    "key_agreement_explicit",
     "pfs",
-    "strong_pfs",
-    "no_misbinding",
+    "identity_no_misbinding",
     "identity_binding_I",
     "identity_binding_R",
-    "no_passive_impersonation_I",
-    "no_passive_impersonation_R",
+    # "no_passive_impersonation_I",
+    # "no_passive_impersonation_R",
     "secretR_psk",
     "secretI_psk",
+    "secret_psk",
     "authRI_psk_non_inj",
     "authIR_psk_non_inj",
+    "authR_mutual_injective",
+    "authI_mutual_injective",
 ]
 
 flag_sets = [

@@ -71,6 +71,9 @@ reduc forall ad:bitstring, k:bitstring, m:bitstring, r:bitstring;   aeaddec(aead
 reduc forall credI:bitstring, credR:bitstring, psk:bitstring;   get_cred(make_id(credI, credR, psk), psk, credR) = credI.
 reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
+axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
+set preciseActions=true.
+
 (*executableI_simple*)
 query cid:bitstring, credI:bitstring, credR:bitstring, gy:bitstring,
       m:bitstring, prk:bitstring, psk:bitstring, x:bitstring, t:time;
@@ -282,9 +285,7 @@ query key:bitstring, i:time; event(eLeakSessionKey( key ))@i .
 (*AttackerGetsPSK*)
 query psk:bitstring, i:time; event(eCompromise( psk ))@i .
 let CompromiseShare(s_2:bitstring)=
-    event eLeakShare( s_2 );
-    event eLeakShare( exp(g, s_2) );
-    out(att,s_2).
+    event eLeakShare( snull ).
 let leakSKey(key_2:bitstring)=
     event eLeakSessionKey( snull ).
 let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,

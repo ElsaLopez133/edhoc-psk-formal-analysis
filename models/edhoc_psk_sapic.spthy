@@ -6,9 +6,6 @@
  Scenarios to check ideally:
  - `tamarin-prover -D=LeakShare`
  - `tamarin-prover -D=LeakSKey`
- - `tamarin-prover -D=LeakPSK`
- - `tamarin-prover -D=LeakIdentityI`
- - `tamarin-prover -D=LeakIdentityR`
 */
 
 theory edhoc_psk_sapic
@@ -27,31 +24,26 @@ functions:
   encxor/2, decxor/2 [destructor],
 
   // Credential modeling functions
-  make_cred/2, // [private],      // make_cred(subject_id, psk) -> credential
-  get_subject/1 [destructor, private],      // get_subject(credential) -> subject_id
-  make_id/2, // [private]           // make_id(cred_i, cred_r, psk) -> ID_CRED_PSK
-  get_cred_i/1 [destructor, private],  // get_cred_i(ID_CRED_PSK) -> cred_i
-  get_psk/1 [destructor, private]      // get_psk(ID_CRED_PSK) -> psk
+  make_id/3,           // make_id(cred_i, cred_r, psk) -> ID_CRED_PSK
+  get_cred/3 [destructor] 
 
 equations:
   aeaddec(aeadenc(m,k,r,ad),k,r,ad) = m,
   decxor(encxor(m,k),k) = m,
-  get_subject(make_cred(subject, psk)) = subject,
-  get_cred_i(make_id(cred_i, psk)) = cred_i,
-  get_psk(make_id(cred_i, psk)) = psk
+  get_cred(make_id(credI, credR, psk), psk, credR) = credI,
 
 #include "Headers.splib"
 
 heuristic:s
 
 /* -------------------- Initiator -------------------- */
-let I(~cid, method, ~id_I, ~psk, ~cred) =
+let I(~cid, method, ~credI, ~psk, ~cred) =
   in(<suitesI,C_I,EAD_1>);
   event MethodOk(method);
 
-  let CRED_I = make_cred(~id_I, ~psk) in
-  let ID_CRED_PSK = make_id(CRED_I, ~psk) in
+  let CRED_I = ~credI in
   let CRED_R = ~cred in
+  let ID_CRED_PSK = make_id(CRED_I, CRED_R, ~psk) in
 
   new ~X;
   new ~EAD_3;
@@ -66,14 +58,14 @@ let I(~cid, method, ~id_I, ~psk, ~cred) =
   (
     CompromiseShare(~X) |
     event InitiateWithID(CRED_I, CRED_R);
-    event StartI(~cid, ~id_I, method, CRED_I, CRED_R, ~psk);
+    event StartI(~cid, method, CRED_I, CRED_R, ~psk);
 
     let G_X = 'g'^~X in
     let m1 = <method,suitesI,G_X,C_I,EAD_1> in
     out(m1);
 
     in(m2);
-    event ReceivedRData(~cid, ~id_I, method, CRED_I, CRED_R, ~psk, ~X, m2);
+    event ReceivedRData(~cid, method, CRED_I, CRED_R, ~psk, ~X, m2);
 
     let < G_Y, CIPHERTEXT_2 > = m2 in
     let TH_1 = hash(<wrap(method), wrap(suitesI), wrap(G_X), wrap(C_I), EAD_1>) in
@@ -111,9 +103,10 @@ let I(~cid, method, ~id_I, ~psk, ~cred) =
         let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
         let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
         let PRK_out = edhoc_kdf(PRK_4e3m,'seven', TH_4, hash_length) in
-        event DerivedI(~cid, ~id_I, method, CRED_I, CRED_R, PRK_out, ~X, G_Y, ~psk);
-        event SendIData(PRK_out, ~id_I, method, CRED_I, CRED_R, ~psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a>);
-        event SendIm3(~cid, ~id_I, method, CRED_I, CRED_R, ~psk, ~X, G_Y, m3);
+        event DerivedI(~cid, method, CRED_I, CRED_R, PRK_out, ~X, G_Y, ~psk);
+        event ExplicitDerivedI(~cid, method, CRED_I, CRED_R, PRK_out, ~X, G_Y, ~psk, G_YX);
+        event SendIData(PRK_out, method, CRED_I, CRED_R, ~psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a>);
+        event SendIm3(~cid, method, CRED_I, CRED_R, ~psk, ~X, G_Y, m3);
         out(m3);
         event TransmitEAD(m3, ~EAD_3, PRK_4e3m);
       
@@ -124,8 +117,8 @@ let I(~cid, method, ~id_I, ~psk, ~cred) =
                 let ad_4 = <'Encrypt0','empty',external_aad_4> in
                 let plaintext_4 = aeaddec(m4, K_4, IV_4, ad_4) in
                 let EAD_4 = plaintext_4 in
-                event AcceptIData(PRK_out, ~id_I, method, CRED_I, CRED_R, ~psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a, plaintext_4>);
-                event AcceptI(~cid, ~id_I, method, CRED_I, CRED_R, PRK_out, ~X, G_Y, ~psk);
+                event AcceptIData(PRK_out, method, CRED_I, CRED_R, ~psk,~X,G_Y,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, ~EAD_3, m1, plaintext_2, plaintext_3a, plaintext_4>);
+                event AcceptI(~cid, method, CRED_I, CRED_R, PRK_out, ~X, G_Y, ~psk);
                 0
             )
             |
@@ -135,13 +128,13 @@ let I(~cid, method, ~id_I, ~psk, ~cred) =
   )
 
 /* -------------------- Responder -------------------- */
-let R(~cid, ~id_R, ~psk) =
+let R(~cid, ~idR, ~psk) =
   in(<C_R,EAD_2,suitesR>);
   in(m1);
   let <method,suitesI,G_X,C_I,EAD_1> = m1 in
   event MethodOk(method);
 
-  let CRED_R = make_cred(~id_R, ~psk) in
+  let CRED_R = ~idR in
   new ~Y;
   new ~EAD_4;
   event Share(~Y);
@@ -150,7 +143,7 @@ let R(~cid, ~id_R, ~psk) =
   (
     CompromiseShare(~Y) |
     event RespondWithID(CRED_R);
-    event StartR(~cid, ~id_R, method, CRED_R, ~psk);
+    event StartR(~cid, method, CRED_R, ~psk);
 
     let G_Y = 'g'^~Y in
     let G_XY = G_X^~Y in
@@ -170,7 +163,7 @@ let R(~cid, ~id_R, ~psk) =
       event DerivedRShared(G_XY);
 
       let m2 = <G_Y, encxor(plaintext_2, KEYSTREAM_2A)> in
-      event SendRData(~cid, ~id_R, method, CRED_R, ~psk, m2);							    
+      event SendRData(~cid, method, CRED_R, ~psk, m2);							    
       out(m2);
 
       in(m3);
@@ -180,16 +173,17 @@ let R(~cid, ~id_R, ~psk) =
       let KEYSTREAM_3 = edhoc_kdf(PRK_3e2m,'eleven', TH_3, plaintext_length) in
       let plaintext_3a = decxor(m3, KEYSTREAM_3) in
       let <ID_CRED_PSK_in, ciphertext_3b> = plaintext_3a in
-      let CRED_I = get_cred_i(ID_CRED_PSK_in) in
-      let PSK_in = get_psk(ID_CRED_PSK_in) in
+
+      let CRED_I = get_cred(ID_CRED_PSK_in, ~psk, CRED_R) in
+      // let PSK_in = get_psk(ID_CRED_PSK_in) in
       
       if CRED_I = CRED_R then (
         0
       ) else
 
-      event ReceivedRm3(~cid, ~id_R, method, CRED_I, CRED_R, ~psk, ~Y, G_X, m3);
+      event ReceivedRm3(~cid, method, CRED_I, CRED_R, ~psk, ~Y, G_X, m3);
       (
-        if PSK_in = ~psk then (
+        // if PSK_in = ~psk then (
           let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five', TH_3, hash_length) in
           let PRK_4e3m = hkdfextract(~psk, SALT_4e3m) in
           let K_3 = edhoc_kdf(PRK_4e3m,'twelve', TH_3, key_length) in
@@ -208,15 +202,15 @@ let R(~cid, ~id_R, ~psk) =
           let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
           event DerivedR(~cid,PRK_out,~Y,G_X, ~psk);
           event TransmitEAD(m4, ~EAD_4, PRK_out);
-          event AcceptR(~cid, ~id_R, method, CRED_I, CRED_R, PRK_out, G_X, ~Y, ~psk);
-          event AcceptRData(PRK_out, ~id_R, method, CRED_I, CRED_R, ~psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
+          event AcceptR(~cid, method, CRED_I, CRED_R, PRK_out, G_X, ~Y, ~psk);
+          event AcceptRData(PRK_out, method, CRED_I, CRED_R, ~psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
           out(m4);
           (
               0 
               |
               leakSKey(PRK_out)
           )
-        ) else (0)
+        // ) else (0)
     ) else (0)
     )
   )
@@ -225,27 +219,20 @@ let R(~cid, ~id_R, ~psk) =
 let compromise(psk) =
     in('Comp'); event Compromise(psk); event SharePSK(psk); out(psk)
 
-let LeakSubject(id) =
-    in('Comp'); event ExposeSubject(id); out(id)
-
 process:
   !(new ~psk; 
     event Honest(~psk);
 
     !(new ~cid; new ~id;
-      // let valid_cred = make_cred(~id, ~psk) in
-      // out(valid_cred);
-      
-      event Honest(~psk);
+      // Identites are publicly known
       event HonestSubject(~id);
+      out(~id);
 
       ( ( !in(cred); I(~cid, method_four(), ~id, ~psk, cred))
         |
         (!R(~cid, ~id, ~psk))
         |
         (compromise(~psk))
-        |
-        (LeakSubject(~id))
       )
     )
   )
@@ -257,27 +244,28 @@ process:
 #ifdef diffEquiv
 
 diffEquivLemma: // Anonymity as a diff equivalence
-!(
-  new ~psk;
-  event Honest(~psk);
-  new ~cid;
-  new ~subject_i; new ~subject_r; new ~subject_i2;
-  event HonestSubjectI(~subject_i);
-  event HonestSubjectI(~subject_i2);
-  event HonestSubjectR(~subject_r);
+!(new ~psk1; event Honest(~psk1);
+  // new ~psk2; event Honest(~psk2);
 
-  let cred_i = make_cred(~subject_i, ~psk) in
-  let cred_i2 = make_cred(~subject_i2, ~psk) in
-  let cred_r = make_cred(~subject_r, ~psk) in
-  let id_cred_psk = make_id(cred_i, cred_r, ~psk) in
-  let id_cred_psk2 = make_id(cred_i2, cred_r, ~psk) in
+  !(new ~cid1; new ~id1;
+    event HonestSubject(~id1);
+    out(~id1);
 
-  // out(<id_cred_psk>);
+    new ~cid2; new ~id2;
+    event HonestSubject(~id2);
+    out(~id2);
 
-  (
-    ! I(~cid, method_four(), diff(id_cred_psk, id_cred_psk2))
-  | ! R(~cid,id_cred_psk)
-    // passive attacker -> do NOT include compromise(~psk)
+    ( 
+      ( !in(cred); I(~cid1, method_four(), ~id1, ~psk1, cred)) 
+      | 
+      ( !in(cred); I(~cid2, method_four(), ~id2, ~psk1, cred))
+      |
+      (!R(~cid1, ~id1, ~psk1))
+      |
+      (!R(~cid2, ~id2, ~psk1))
+      |
+      (!I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, diff(~id2,~id1))) // test scenarios with id1 as Responder
+    )
   )
 )
 

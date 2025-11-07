@@ -24,25 +24,25 @@ lemma exists_acceptR[output=[proverif]]:
 
 lemma executableI_simple:
   exists-trace
-  "Ex cid m idI prk x gy credI credR psk #t.
-    AcceptI(cid, idI, m, credI, credR, prk, x, gy, psk) @ t"
+  "Ex cid m prk x gy credI credR psk #t.
+    AcceptI(cid, m, credI, credR, prk, x, gy, psk) @ t"
 
 lemma executableR_simple:
   exists-trace
-  "Ex cid idR m prk gx y credI credR psk #t.
-    AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk) @ t"
+  "Ex cid m prk gx y credI credR psk #t.
+    AcceptR(cid, m, credI, credR, prk, gx, y, psk) @ t"
 
 lemma executable_end:
   exists-trace
-  "Ex cid1 cid2 m idI idR prk x gy gx y credI credR psk #t1 #t2.
-    AcceptI(cid1, idI, m, credI, credR, prk, x, gy, psk) @ t1 &
-    AcceptR(cid2, idR, m, credI, credR, prk, gx, y, psk) @ t2"
+  "Ex cid1 cid2 m prk x gy gx y credI credR psk #t1 #t2.
+    AcceptI(cid1, m, credI, credR, prk, x, gy, psk) @ t1 &
+    AcceptR(cid2, m, credI, credR, prk, gx, y, psk) @ t2"
 
 lemma executable_start:
   exists-trace
-  "Ex cid1 cid2 m idI idR credI credR psk #t1 #t2.
-    StartI(cid1, idI, m, credI, credR, psk) @ t1 &
-    StartR(cid2, idR, m, credR, psk) @ t2"
+  "Ex cid1 cid2 m credI credR psk #t1 #t2.
+    StartI(cid1, m, credI, credR, psk) @ t1 &
+    StartR(cid2, m, credR, psk) @ t2"
 
 // ******************************************************************
 // ************** Confidentiality  **********************************
@@ -55,19 +55,21 @@ lemma executable_start:
 // can impersonate one of the peers from the beginning if both PSK and identites
 // are leaked.
 lemma secretR_psk:
-  "All cid m idR credI credR prk gx y psk #i #j #k.
-    AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk)@i & K(prk)@j & Honest(psk)@k
+  "All cid m credI credR prk gx y psk #i #j #k #l.
+    AcceptR(cid, m, credI, credR, prk, gx, y, psk)@i & K(prk)@j & Honest(psk)@k
+    & HonestSubject(credI)@l
    ==> 
-    (Ex #t #l. Compromise(psk)@t & t < j & ExposeSubject(idR)@l)
+    (Ex #t. Compromise(psk)@t & t < j)
     | 
     (Ex #t. LeakSessionKey(prk)@t)
     "
 
 lemma secretI_psk:
-  "All cid m idI credI credR prk x gy psk #i #j #k.
-     AcceptI(cid, idI, m, credI, credR, prk, x, gy, psk)@i & K(prk)@j & Honest(psk)@k
+  "All cid m credI credR prk x gy psk #i #j #k #l.
+     AcceptI(cid, m, credI, credR, prk, x, gy, psk)@i & K(prk)@j & Honest(psk)@k
+     & HonestSubject(credR)@l
    ==> 
-    (Ex #t #l. Compromise(psk)@t & t < j & ExposeSubject(idI)@l)
+    (Ex #t. Compromise(psk)@t)
     | 
     (Ex #t. LeakSessionKey(prk)@t)
     "
@@ -77,14 +79,14 @@ lemma secretI_psk:
 // in order to derive the session key.
 // This is because we are now requiring that both peers derive the key
 lemma secret_psk:
-  "All cid1 cid2 m idI idR credI credR prk x gy y gx psk #i #j #k #p.
-     AcceptI(cid1, idI, m, credI, credR, prk, x, gy, psk)@i & 
-     AcceptR(cid2, idR, m, credI, credR, prk, gx, y, psk)@j &
-     K(prk)@k & Honest(psk)@p
+  "All cid1 cid2 m credI credR prk x gy y gx psk #i #j #k #p. // #l #c.
+     AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i & 
+     AcceptR(cid2, m, credI, credR, prk, gx, y, psk)@j &
+     K(prk)@k & Honest(psk)@p // &HonestSubject(credI)@l & HonestSubject(credR)@c 
    ==> 
-   (Ex #t #c #l. Compromise(psk)@t & t < k & LeakShare(x)@c & ExposeSubject(idI)@l)
+   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(x)@c)
    |
-   (Ex #t #c #l. Compromise(psk)@t & t < k & LeakShare(y)@c & ExposeSubject(idR)@l)
+   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(y)@c)
     | 
    (Ex #t. LeakSessionKey(prk)@t)
     "
@@ -99,12 +101,12 @@ lemma secret_psk:
 // unless PSK and subjects were leaked, in which case the attacker can forge
 // a session as an Initiator
 lemma authRI_psk_non_inj:
-  "All cid m idR credI credR prk gx y psk #i #k.
-     AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk)@i & Honest(psk)@k
-   ==> (Ex cid2 idI prk2 x2 gy2 #t.
-          DerivedI(cid2, idI, m, credI, credR, prk2, x2, gy2, psk)@t & t < i & prk = prk2)   // honest case
+  "All cid m credI credR prk gx y psk #i #j #k.
+     AcceptR(cid, m, credI, credR, prk, gx, y, psk)@i & Honest(psk)@k & HonestSubject(credI)@j
+   ==> (Ex cid2 prk2 x2 gy2 #t.
+          DerivedI(cid2, m, credI, credR, prk2, x2, gy2, psk)@t & t < i & prk = prk2)   // honest case
     | 
-   (Ex #t #l. Compromise(psk)@t & t < i & ExposeSubject(idR)@l)
+   (Ex #t. Compromise(psk)@t & t < i)
     "                
 // PASSED
 // If an Initiator accepted a session, i.e., it finished, then there must 
@@ -112,12 +114,12 @@ lemma authRI_psk_non_inj:
 // unless PSK and subjects were leaked, in which case the attacker can forge
 // a session as a Repsonder
 lemma authIR_psk_non_inj:
-  "All cid m idI credI credR prk x gy psk #i #k.
-     AcceptI(cid, idI, m, credI, credR, prk, x, gy, psk)@i & Honest(psk)@k
-   ==> (Ex cid2 idR prk2 gx2 y2 #j.
-          AcceptR(cid2, idR, m, credI, credR, prk2, gx2, y2, psk)@j & j < i & prk = prk2)  // honest case
+  "All cid m credI credR prk x gy psk #i #j #k.
+     AcceptI(cid, m, credI, credR, prk, x, gy, psk)@i & Honest(psk)@k & HonestSubject(credR)@j  
+   ==> (Ex cid2 prk2 gx2 y2 #j.
+          AcceptR(cid2, m, credI, credR, prk2, gx2, y2, psk)@j & j < i & prk = prk2)  // honest case
     | 
-   (Ex #t #l. Compromise(psk)@t & t < i & ExposeSubject(idI)@l)
+   (Ex #t. Compromise(psk)@t & t < i)
    "
 
 // injectivity 
@@ -131,33 +133,29 @@ lemma authIR_psk_non_inj:
 // If this happens, then the attacker could play the role of I and there would not
 // be an Initiator running in the session.
 lemma authR_mutual_injective:
-  "All cid1 cid2 m idR1 idR2 credI1 credI2 credR1 credR2 prk gx1 gx2 y1 y2 psk #i #j #k.
-     AcceptR(cid1, idR1, m, credI1, credR1, prk, gx1, y1, psk)@i
-     & AcceptR(cid2, idR2, m, credI2, credR2, prk, gx2, y2, psk)@j
-     & Honest(psk)@k
-   ==> (Ex cid idI credI credR x gy prk #t.
-          DerivedI(cid, idI, m, credI, credR, prk, x, gy, psk)@t & t < i & t < j 
+  "All cid1 cid2 m credI1 credI2 credR1 credR2 prk gx1 gx2 y1 y2 psk #i #j #k #l #c.
+     AcceptR(cid1, m, credI1, credR1, prk, gx1, y1, psk)@i
+     & AcceptR(cid2, m, credI2, credR2, prk, gx2, y2, psk)@j
+     & Honest(psk)@k & HonestSubject(credI1)@l & HonestSubject(credI2)@c
+   ==> (Ex cid credI credR x gy prk #t.
+          DerivedI(cid, m, credI, credR, prk, x, gy, psk)@t & t < i & t < j 
           & cid1 = cid2 & gx1 = gx2 & y1 = y2 & credI1 = credI2 & credR1 = credR2 
           & credI = credI1 & credR = credR1 & #i = #j)
     | 
-    (Ex #t #c. Compromise(psk)@t & t < j & ExposeSubject(idR2)@c)
-    |
-    (Ex #t #c. Compromise(psk)@t & t < i & ExposeSubject(idR1)@c)
+    (Ex #t. Compromise(psk)@t & t < j)
     "     
 
 lemma authI_mutual_injective:
-  "All cid1 cid2 m idI1 idI2 credI1 credI2 credR1 credR2 prk x1 x2 gy1 gy2 psk #i #j #k.
-     AcceptI(cid1, idI1, m, credI1, credR1, prk, x1, gy1, psk)@i
-     & AcceptI(cid2, idI2, m, credI2, credR2, prk, x2, gy2, psk)@j
-     & Honest(psk)@k
-   ==> (Ex cid idR credI credR gx y prk #t.
-          AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk)@t & t < i & t < j 
+  "All cid1 cid2 m credI1 credI2 credR1 credR2 prk x1 x2 gy1 gy2 psk #i #j #k #l #c.
+     AcceptI(cid1, m, credI1, credR1, prk, x1, gy1, psk)@i
+     & AcceptI(cid2, m, credI2, credR2, prk, x2, gy2, psk)@j
+     & Honest(psk)@k &HonestSubject(credR1)@l & HonestSubject(credR2)@c
+   ==> (Ex cid credI credR gx y prk #t.
+          AcceptR(cid, m, credI, credR, prk, gx, y, psk)@t & t < i & t < j 
           & cid1 = cid2 & x1 = x2 & gy1 = gy2 & credI1 = credI2 & credR1 = credR2 
           & credI = credI1 & credR = credR1 & #i = #j)
     | 
-    (Ex #t #c. Compromise(psk)@t & t < j & ExposeSubject(idI2)@c)
-    |
-    (Ex #t #c. Compromise(psk)@t & t < i & ExposeSubject(idI1)@c)
+    (Ex #t. Compromise(psk)@t & t < j)
     "   
 
 // // Data authentication (not sure)
@@ -182,22 +180,22 @@ lemma authI_mutual_injective:
 // ******************************************************************
 
 // PASSED
-lemma key_agreement_R_implies_I:
- "All cid m idR credI credR prk gx psk y #i.
-    AcceptR(cid, idR, m, credI, credR, prk, gx, y,psk)@i
+lemma key_agreement_implicit:
+ "All cid m credI credR prk gx psk y #i #j.
+    AcceptR(cid, m, credI, credR, prk, gx, y,psk)@i & HonestSubject(credI)@j
   ==> 
-    (Ex #j x gy cid2 idI. DerivedI(cid2, idI, m, credI, credR, prk, x, gy, psk)@j & j < i)
+    (Ex #j x gy cid2. DerivedI(cid2, m, credI, credR, prk, x, gy, psk)@j & j < i)
     | 
-    (Ex #t #c. Compromise(psk)@t & t < i &ExposeSubject(idR)@c)
+    (Ex #t. Compromise(psk)@t & t < i )
 "
 
-lemma key_agreement_I_implies_R:
- "All cid1 idI m credI credR prk x gy psk #i.
-    AcceptI(cid1, idI, m, credI, credR, prk, x, gy, psk)@i
+lemma key_agreement_explicit:
+ "All cid1 m credI credR prk x gy psk #i #j.
+    AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i & HonestSubject(credR)@j
   ==>
-    (Ex #j gx y cid2 idR. AcceptR(cid2, idR, m, credI, credR, prk, gx, y, psk)@j & j < i)
+    (Ex #j gx y cid2. AcceptR(cid2, m, credI, credR, prk, gx, y, psk)@j & j < i)
     |
-    (Ex #t #c. Compromise(psk)@t & t < i & ExposeSubject(idI)@c )
+    (Ex #t. Compromise(psk)@t & t < i)
 "
 
 // *************************************************************
@@ -206,18 +204,19 @@ lemma key_agreement_I_implies_R:
 
 // PASSED
 lemma pfs:
-  "All cid1 cid2 m idI idR credI credR prk psk gy x gx y #i #j #c #k #l.
-     AcceptI(cid1, idI, m, credI, credR, prk, x, gy, psk)@i
-     & AcceptR(cid2, idR, m, credI, credR, prk, gx, y, psk)@j
+  "All cid1 cid2 m credI credR prk psk gy x gx y #i #j #c #k #l #p #u.
+     AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i
+     & AcceptR(cid2, m, credI, credR, prk, gx, y, psk)@j
      & Compromise(psk)@c  & i < c // long-term key is compromised after session
      & Honest(psk)@k
+     &HonestSubject(credI)@p & HonestSubject(credR)@u
      & K(prk)@l & i < l  & j < l          // attacker learns prk after session completed
      ==>
      (Ex #t. LeakSessionKey(prk)@t & t < l)
      | 
-     (Ex #t #u #c. ExposeSubject(idI)@t & LeakShare(x)@u & u < l & ExposeSubject(idR)@c)
+     (Ex #t. LeakShare(x)@t & t < l )
      |
-     (Ex #t #u #c. ExposeSubject(idR)@t & LeakShare(y)@u & u < l & ExposeSubject(idI)@c)
+     (Ex #t. LeakShare(y)@t & t < l )
   "
 
 // ******************************************************************
@@ -227,22 +226,22 @@ lemma pfs:
 // Whenever the initiator accepts with identities (subj_i, subj_r), 
 // there must exist a corresponding eInitiateWithID(subj_i, subj_r) event earlier in the trace.
 lemma identity_binding_I:
-  "All cid m idI credI credR prk x gy psk #i.
-     AcceptI(cid, idI, m, credI, credR, prk, x, gy, psk)@i
+  "All cid m credI credR prk x gy psk #i #j #k.
+     AcceptI(cid, m, credI, credR, prk, x, gy, psk)@i &Honest(psk)@k & HonestSubject(credR)@j 
    ==> (Ex #j. InitiateWithID(credI, credR)@j)"
 
 lemma identity_binding_R:
-  "All cid m idR credI credR prk gx y psk #i.
-     AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk)@i
+  "All cid m credI credR prk gx y psk #i #j #k.
+     AcceptR(cid, m, credI, credR, prk, gx, y, psk)@i &Honest(psk)@k & HonestSubject(credI)@j 
    ==> (Ex #j. RespondWithID(credR)@j)"
 
 // If I and R derived the same prk, then the psk must be the same and
 // the identites must match
 lemma identity_no_misbinding:
-  "All cidI cidR idI idR m prk credI_I credR_I credI_R credR_R
+  "All cidI cidR m prk credI_I credR_I credI_R credR_R
     psk_I psk_R gx y x gy #i #j #k #l.
-    AcceptI(cidI, idI, m, credI_I, credR_I, prk, x, gy, psk_I)@i &
-    AcceptR(cidR, idR, m, credI_R, credR_R, prk, gx, y, psk_R)@j &
+    AcceptI(cidI, m, credI_I, credR_I, prk, x, gy, psk_I)@i &
+    AcceptR(cidR, m, credI_R, credR_R, prk, gx, y, psk_R)@j &
     Honest(psk_I) @k &
     Honest(psk_R) @l
     ==> 
