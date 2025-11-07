@@ -32,11 +32,34 @@ lemma executableR_simple:
   "Ex cid idR m prk gx y credI credR psk #t.
     AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk) @ t"
 
+lemma executableR_m2:
+  exists-trace
+  "Ex cid idR m credR psk m2 #t.
+    SendRData(cid, idR, m, credR, psk, m2) @ t"
+
+lemma executable_Receivem3:
+  exists-trace
+  "Ex cid1 cid2 idR idI m credI credR psk x gy y gx m3 #t1 #t2.
+    SendIm3(cid1, idI, m, credI, credR, psk, x, gy, m3) @ t1 &
+    ReceivedRm3(cid2, idR, m, credR, psk, y, gx, m3) @ t2"
+
+lemma executable_ReceiveCredm3:
+  exists-trace
+  "Ex cid1 cid2 idI idR m credI credR psk x gy y gx m3 #t1 #t2.
+    SendIm3(cid1, idI, m, credI, credR, psk, x, gy, m3) @ t1 &
+    ReceivedRCredm3(cid2, idR, m, credI, credR, psk, y, gx, m3) @ t2"
+
 lemma executable_end:
   exists-trace
   "Ex cid1 cid2 m idI idR prk x gy gx y credI credR psk #t1 #t2.
     AcceptI(cid1, idI, m, credI, credR, prk, x, gy, psk) @ t1 &
     AcceptR(cid2, idR, m, credI, credR, prk, gx, y, psk) @ t2"
+
+lemma executable_Processm3:
+  exists-trace
+  "Ex cid1 cid2 m idI idR credI credR psk x gy y gx m3 #t1 #t2.
+    SendIm3(cid1, idI, m, credI, credR, psk, x, gy, m3) @ t1 &
+    ProcessRm3(cid2, idR, m, credI, credR, psk, y, gx, m3) @ t2"
 
 lemma executable_start:
   exists-trace
