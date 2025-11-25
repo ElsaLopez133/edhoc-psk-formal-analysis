@@ -103,7 +103,7 @@ The script
 ```bash
  ./proverif_anonymity.sh <label> <file> 
 ```
-allows us to run the equivalence of file <file>, annotate it with <label> and append the results in a .csv
+allows us to run the equivalence of FILE, annotate it with LABEL and append the results in a .csv
 
 There are threee files to prove anonymoty
 
