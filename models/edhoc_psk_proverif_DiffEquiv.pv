@@ -73,6 +73,9 @@ reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 set preciseActions=true.
+set attacker=passive.
+set simplifyProcess = false.
+set reconstructTrace = false.
 
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
@@ -243,28 +246,18 @@ process
     !
     (new psk1_2:bitstring;
      event eHonest( psk1_2 );
-     !
-     (new cid1_2:bitstring;
-      new id1_2:bitstring;
-      event eHonestSubject( id1_2 );
-      out(att,id1_2);
-      new cid2_2:bitstring;
-      new id2_2:bitstring;
-      event eHonestSubject( id2_2 );
-      out(att,id2_2);
-      ((((((((!
-              (in(att,cred_3:bitstring);
-               I(cid1_2, method_four, id1_2, psk1_2, cred_3)))
-           | (!
-              (in(att,cred_4:bitstring);
-               I(cid2_2, method_four, id2_2, psk1_2, cred_4)))))
-         | (!
-            (R(cid1_2, id1_2, psk1_2)))))
-       | (!
-          (R(cid2_2, id2_2, psk1_2)))))
-     | (!
-        (I(choice[cid1_2, cid2_2], method_four, choice[id1_2, id2_2], psk1_2,
-           choice[id2_2, id1_2]))))))
+     new cid1_2:bitstring;
+     new id1_2:bitstring;
+     event eHonestSubject( id1_2 );
+     out(att,id1_2);
+     new cid2_2:bitstring;
+     new id2_2:bitstring;
+     event eHonestSubject( id2_2 );
+     out(att,id2_2);
+     ((I(choice[cid1_2, cid2_2], method_four, choice[id1_2, id2_2], psk1_2,
+         id1_2))
+    | (!
+       (R(cid1_2, id1_2, psk1_2)))))
 
 (*
 WARNING: the following wellformedness checks failed!

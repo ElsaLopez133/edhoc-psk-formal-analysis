@@ -237,17 +237,50 @@ process:
     )
   )
 
+
+
 #include "LakePropertiesPSK.splib"
 
 // === Diff-equivalence (initiator anonymity, passive attacker) ===
 
 #ifdef diffEquiv
 
+// diffEquivLemma: // Anonymity as a diff equivalence
+// !(new ~psk1; event Honest(~psk1);
+//   // new ~psk2; event Honest(~psk2);
+
+//   !(new ~cid1; new ~id1;
+//     event HonestSubject(~id1);
+//     out(~id1);
+
+//     new ~cid2; new ~id2;
+//     event HonestSubject(~id2);
+//     out(~id2);
+
+//     new ~idR;
+//     event HonestSubject(~idR);
+//     out(~idR);
+
+//     ( 
+//       ( !I(~cid1, method_four(), ~id1, ~psk1, ~idR)) 
+//       | 
+//       ( !I(~cid2, method_four(), ~id2, ~psk1, ~idR))
+//       |
+//       (!R(~cid1, ~idR, ~psk1))
+//       |
+//       (!I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, ~idR)) // test scenarios with idR as Responder
+//     )
+//   )
+// )
+
+// only two
 diffEquivLemma: // Anonymity as a diff equivalence
-!(new ~psk1; event Honest(~psk1);
+!(
+  new ~psk1; event Honest(~psk1);
   // new ~psk2; event Honest(~psk2);
 
-  !(new ~cid1; new ~id1;
+  (
+    new ~cid1; new ~id1;
     event HonestSubject(~id1);
     out(~id1);
 
@@ -256,15 +289,9 @@ diffEquivLemma: // Anonymity as a diff equivalence
     out(~id2);
 
     ( 
-      ( !in(cred); I(~cid1, method_four(), ~id1, ~psk1, cred)) 
-      | 
-      ( !in(cred); I(~cid2, method_four(), ~id2, ~psk1, cred))
-      |
+      (I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, ~id1)) // test scenarios with id3 as Responder
+      |       
       (!R(~cid1, ~id1, ~psk1))
-      |
-      (!R(~cid2, ~id2, ~psk1))
-      |
-      (!I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, diff(~id2,~id1))) // test scenarios with id1 as Responder
     )
   )
 )
@@ -277,44 +304,34 @@ diffEquivLemma: // Anonymity as a diff equivalence
 #ifdef EquivLemmas
 
 equivLemma:
-(
-  new ~psk1;
-  event Honest(~psk1);
-  new ~cid1;
-  new ~subject_i1; new ~subject_r1;
-  event HonestSubjectI(~subject_i1);
-  event HonestSubjectR(~subject_r1);
-
-  let cred_i1 = make_cred(~subject_i1, ~psk1) in
-  let cred_r1 = make_cred(~subject_r1, ~psk1) in
-  let id_cred_psk1 = make_id(cred_i1, cred_r1, ~psk1) in
-
-  out(<id_cred_psk1>);
-
+(new ~psk1;
+ event Honest(~psk1); 
   (
-     I(~cid1, method_four(), id_cred_psk1)
-  |  R(~cid1, id_cred_psk1)
-    // passive attacker -> do NOT include compromise(~psk1)
+    new ~cid1; new ~id1; new ~idR1;
+    out(~id1);
+    out(~idR1);
+
+    (
+      I(~cid1, method_four(), ~id1, ~psk1, ~idR1)
+    |  R(~cid1, ~idR1, ~psk1 )
+      // passive attacker -> do NOT include compromise(~psk1)
+    )
   )
 )
 
 (
   new ~psk2;
   event Honest(~psk2);
-  new ~cid2;
-  new ~subject_i2; new ~subject_r2;
-  event HonestSubjectI(~subject_i2);
-  event HonestSubjectR(~subject_r2);
-
-  let cred_i2 = make_cred(~subject_i2, ~psk2) in
-  let cred_r2 = make_cred(~subject_r2, ~psk2) in
-  let id_cred_psk2 = make_id(cred_i2, cred_r2, ~psk2) in
-
-  out(<id_cred_psk2>);
-
   (
-     I(~cid2, method_four(), id_cred_psk2)
-  |  R(~cid2, id_cred_psk2)
+    new ~cid2; new ~id2; new ~idR2;
+    out(~id2);
+    out(~idR2);
+
+    (
+      I(~cid2, method_four(), ~id2, ~psk2, ~idR2)
+    |  R(~cid2, ~idR2, ~psk2 )
+      // passive attacker -> do NOT include compromise(~psk2)
+    )
   )
 )
 

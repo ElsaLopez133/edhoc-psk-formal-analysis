@@ -96,6 +96,25 @@ To output the elapsed time, do
 /usr/bin/time -f "Elapsed time: %e seconds" proverif edhoc_psk_proverif.pv
 ```
 
+#### Anonymity in Proverif
+
+To prove anonymoty we use the equivalences in Proverif. Intuitively, two process are equivalent if they cannot be distinguished by the attacker.
+The script 
+```bash
+ ./proverif_anonymity.sh <label> <file> 
+```
+allows us to run the equivalence of file <file>, annotate it with <label> and append the results in a .csv
+
+There are threee files to prove anonymoty
+
+| File | Purpose |
+|------|---------|
+| `edhoc_psk_proverif_diffEquiv_manual.pv` | Proverif file containing unbounded, and bounded sessions, and proving anonymity ofr I and R (we do not do set attacker=passive) |
+| `edhoc_psk_proverif_diffEquiv_passive_attacker.pv` | We add set attacker = passive. WIP: it generally explodes |
+| `edhoc_psk_proverif_diffEquiv_passive_private_channel.pv` | We remove set attacker=passive but define a private channel, replacing in(att,...) for in(priv,...) |
+---
+
+
 ### ❓Which one to use
 
 ProVerif is a great tool for the initial, automated analysis. In ProVerif, traces are inferred automatically, leading to less explicit control over temporal behaviors. It focuses more on reachability properties, such as executability, secrecy and authentication, and has a limited support for equivalence. The output is mostly textual with limited visualiztion.
