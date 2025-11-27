@@ -97,6 +97,7 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
            let G_X_2:bitstring=exp(g, X_2) in
            let m1_2:bitstring=(method_2, (suitesI_2, (G_X_2, (C_I_2, EAD_1_2)))) in
            out(att,m1_2);
+           out(priv,m1_2);
            in(priv,m2_2:bitstring);
            event eReceivedRData( cid_2, method_2, CRED_I_2, CRED_R_2, psk_2, X_2,
                                  m2_2
@@ -148,6 +149,7 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
                                 m3_2
                       );
                 out(att,m3_2);
+                out(priv,m3_2);
                 event eTransmitEAD( m3_2, EAD_3_2, PRK_4e3m_2 );
                 ((in(priv,m4_2:bitstring);
                   let external_aad_4_2:bitstring=TH_4_2 in
@@ -189,6 +191,7 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
            let m2_2:bitstring=(G_Y_2, encxor(plaintext_2_2, KEYSTREAM_2A_2)) in
            event eSendRData( cid_2, method_2, CRED_R_2, psk_2, m2_2 );
            out(att,m2_2);
+           out(priv,m2_2);
            in(priv,m3_2:bitstring);
            let TH_3_2:bitstring=hash((wrap(TH_2_2), plaintext_2_2)) in
            let PRK_3e2m_2:bitstring=PRK_2e_2 in
@@ -231,6 +234,7 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
                                     (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (EAD_3_2, (m1_2, (plaintext_2_2, plaintext_3a_2)))))))))
                       );
                 out(att,m4_2);
+                out(priv,m4_2);
                 ((0)
                | (leakSKey(PRK_out_2))))))).
 let compromise(psk_2:bitstring)=
@@ -251,7 +255,7 @@ set reconstructTrace = true.
 (*   Anonymity of the Initiator (PSK, unbounded peers)   *)
 (* ===================================================== *)
 
-process
+(* process
     !
     (
       new psk_2:bitstring;
@@ -281,7 +285,7 @@ process
         | 
         ( !I(cidI_2, method_four, idI_2, psk_2, idR_2) )
       )
-    )
+    ) *)
 
 (* ===================================================== *)
 (*   Anonymity of the Responder (PSK, unbounded peers)   *)
@@ -324,7 +328,7 @@ process
 (*   Anonymity of the Initiator (PSK, 2 peers)           *)
 (* ===================================================== *)
 
-(* process
+process
 !
   (
     new psk_2:bitstring;
@@ -348,7 +352,7 @@ process
       |
       ( !I(cidI_2, method_four, idI_2, psk_2, idR_2) )
     )
-  ) *)
+  )
 
 
 (* ===================================================== *)
@@ -370,14 +374,14 @@ process
   (* The challenge choice for responder identity *)
   let idR = choice[idR1, idR2] in
   let cidR:bitstring=choice[cid1, cid2] in
-  out(pub,idI1);
+  out(att,idI1);
 
   (
        !I(cid1, method_four(), idI1, psk, idR) 
        |
        !R(cidR, idR, psk)
   )
-)
- *)
+) *)
+
 
 

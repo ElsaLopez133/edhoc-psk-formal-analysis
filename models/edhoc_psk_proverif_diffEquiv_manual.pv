@@ -251,8 +251,8 @@ set reconstructTrace = true.
 (* ===================================================== *)
 (*   Anonymity of the Initiator (PSK, unbounded peers)   *)
 (* ===================================================== *)
-(* 
-process
+
+(* process
     !
     (
       new psk_2:bitstring;
@@ -267,6 +267,7 @@ process
       event eHonestSubject( id2_2 );
 
       out(att, ( id1_2, id2_2 ));
+      (* out(att, ( idR_2 )); *)
 
       let idI_2:bitstring=choice[id1_2, id2_2] in
       let cidI_2:bitstring=choice[cid1_2, cid2_2] in
@@ -288,7 +289,7 @@ process
 (*   Anonymity of the Responder (PSK, unbounded peers)   *)
 (* ===================================================== *)
 
-(* process
+process
     !
     (
       new psk_2:bitstring;
@@ -318,7 +319,7 @@ process
         | 
         ( !R(cidR_2, idR_2, psk_2) )
       )
-    ) *)
+    )
 
 (* ===================================================== *)
 (*   Anonymity of the Initiator (PSK, 2 peers)           *)
@@ -355,7 +356,7 @@ process
 (*   Anonymity of the Responder (PSK, 2 peers)           *)
 (* ===================================================== *)
 
-process
+(* process
 !
 (
   new psk:bitstring; event eHonest(psk);
@@ -371,13 +372,14 @@ process
   let idR = choice[idR1, idR2] in
   let cidR:bitstring=choice[cid1, cid2] in
   out(att,idI1);
+  out(att, (idR1, idR2));
 
   (
        !I(cid1, method_four(), idI1, psk, idR) 
        |
        !R(cidR, idR, psk)
   )
-)
+) *)
 
 
 

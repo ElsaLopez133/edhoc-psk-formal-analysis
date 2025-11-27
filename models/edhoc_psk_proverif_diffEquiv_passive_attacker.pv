@@ -247,7 +247,7 @@ set simplifyProcess = true.
 set reconstructTrace = true.
 
 
-process
+(* process
     (
       new psk_2:bitstring;
       event eHonest( psk_2 );
@@ -270,7 +270,35 @@ process
         |
         ( I(cidI_2, method_four, idI_2, psk_2, id1_2) )
       )
+    ) *)
+
+(* ===================================================== *)
+(*   Anonymity of the Initiator (PSK, 2 peers)           *)
+(* ===================================================== *)
+
+process
+(* ! *)
+  (
+    new psk_2:bitstring;
+    event eHonest( psk_2 );
+    
+    new cid1_2:bitstring; new cid2_2:bitstring; new cidR_2:bitstring;
+    new id1_2:bitstring; new id2_2:bitstring; new idR_2:bitstring;
+
+    event eHonestSubject( id1_2 );      
+    event eHonestSubject( id2_2 );
+    event eHonestSubject( idR_2 );
+
+    (* out(att, ( id1_2, id2_2 )); *)
+    (* out(att, ( idR_2 )); *)
+
+    let idI_2:bitstring=choice[id1_2, id2_2] in
+    let cidI_2:bitstring=choice[cid1_2, cid2_2] in
+
+    (
+      ( R(cidR_2, idR_2, psk_2) )
+      |
+      ( I(cidI_2, method_four, idI_2, psk_2, idR_2) )
     )
-
-
+  )
 
