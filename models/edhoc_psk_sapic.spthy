@@ -239,7 +239,7 @@ process:
 
 
 
-#include "LakePropertiesPSK.splib"
+#include "LAKEPropertiesPSK.splib"
 
 // === Diff-equivalence (initiator anonymity, passive attacker) ===
 
