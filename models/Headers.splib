@@ -1,34 +1,6 @@
 // headers.splib for EDHOC-PSK (method_four)
 // We include here the attacker capabilities
 
-// functions:
-//   grpid/0,         // neutral/invalid element (always defined)
-//   check_grp/1 [destructor];
-
-// #ifdef WeakAEAD
-// functions: aeadmalleable/2
-// equations: aeadmalleable(aeadenc(m,r,k,aa),r2) = aeadenc(m,r2,k,aa)
-// #endif
-
-// #ifdef NeutralCheck
-// functions:
-//   grpid/0,         // neutral/invalid element (always defined)
-//   check_grp/1 [destructor];
-// equations:
-//   // In this configuration we accept *real* points; the attacker must
-//   // explicitly supply 'invalid_point' to trigger a failure.
-//   check_grp(invalid_point) = grpid.
-//   check_grp(x) = x.
-// #else
-// functions:
-//   grpid/0,         // neutral/invalid element (always defined)
-//   check_grp/1 [destructor];
-// equations:
-//   // In this configuration we *simulate missing check* by mapping everything
-//   // to grpid (so the branch `if (check_grp(..) = grpid)` will be true).
-//   check_grp(x) = grpid.
-// #endif
-
 
 #ifdef LeakShare
 let CompromiseShare(s) =
@@ -50,30 +22,14 @@ let leakSKey(key) =
 let leakSKey(key) =  event LeakSessionKey('null')
 #endif
 
-// #ifdef LeakPSK
-// let compromise(psk) =
-//     in('Comp');
-//     event Compromise(psk);
-//     out(psk)
-// #else
-// let compromise(psk) = event Compromise('null')
-// #endif
 
-// #ifdef LeakIdentityI
-// let LeakSubjectI(subj_i) =
-//     event ExposeSubjectI(subj_i);
-//     out(subj_i)
-// #else
-// let LeakSubjectI(subj_i) = event ExposeSubjectI('null')
-// #endif
-
-// #ifdef LeakIdentityR
-// let LeakSubjectR(subj_r) =
-//     event ExposeSubjectR(subj_r);
-//     out(subj_r)
-// #else
-// let LeakSubjectR(subj_r) = event ExposeSubjectR('null')
-// #endif
+#ifdef PQDL
+functions: DL/2 [destructor, private]
+reduc forall a:bitstring; DL(exp(g,a), g) = a.
+#else
+functions: DL/2 [destructor]
+equations: DL(x,y) = x    (* harmless default, attacker learns nothing *)
+#endif
 
 
 // Not used for the moment
@@ -91,19 +47,3 @@ functions: check_grp/1 [destructor], const_grp/0
 equations: check_grp(x) = const_grp
 #endif
 
-
-// #ifdef CredCheck
-// functions: check_cred/1 [destructor]
-// equations: check_cred(x) = x
-// #else
-// functions: check_cred/1 [destructor], const_cred/0
-// equations: check_cred(x) = const_cred
-// #endif
-
-// #ifdef XorPrecise
-// functions: encxor/2, decxor/2 
-// equations: decxor(encxor(m,x),x) = m, decxor(encxor(m,x),m) = x
-// #else
-// functions: encxor/2, decxor/2  [destructor]
-// equations: decxor(encxor(m,x),x) = m
-// #endif

@@ -241,99 +241,126 @@ process:
 
 #include "LAKEPropertiesPSK.splib"
 
-// === Diff-equivalence (initiator anonymity, passive attacker) ===
+// === Anonymity of I and R agains active attackers ===
 
-#ifdef diffEquiv
+#ifdef diffEquivAnonymityInitiator
 
-// diffEquivLemma: // Anonymity as a diff equivalence
-// !(new ~psk1; event Honest(~psk1);
-//   // new ~psk2; event Honest(~psk2);
-
-//   !(new ~cid1; new ~id1;
-//     event HonestSubject(~id1);
-//     out(~id1);
-
-//     new ~cid2; new ~id2;
-//     event HonestSubject(~id2);
-//     out(~id2);
-
-//     new ~idR;
-//     event HonestSubject(~idR);
-//     out(~idR);
-
-//     ( 
-//       ( !I(~cid1, method_four(), ~id1, ~psk1, ~idR)) 
-//       | 
-//       ( !I(~cid2, method_four(), ~id2, ~psk1, ~idR))
-//       |
-//       (!R(~cid1, ~idR, ~psk1))
-//       |
-//       (!I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, ~idR)) // test scenarios with idR as Responder
-//     )
-//   )
-// )
-
-// only two
-diffEquivLemma: // Anonymity as a diff equivalence
-!(
-  new ~psk1; event Honest(~psk1);
-  // new ~psk2; event Honest(~psk2);
-
+diffEquivLemma: 
+!
   (
-    new ~cid1; new ~id1;
+    new ~psk; event Honest(~psk);
+    
+    new ~cid1; new ~cid2; new ~cidR;
+    new ~id1; new ~id2; new ~idR;
     event HonestSubject(~id1);
-    out(~id1);
-
-    new ~cid2; new ~id2;
     event HonestSubject(~id2);
+    event HonestSubject(~idR);
+    out(~id1);
     out(~id2);
+    out(~idR);
+
+    let idI = diff(~id1,~id2) in
+    let cidI = diff(~cid1,~cid2) in
 
     ( 
-      (I(diff(~cid1,~cid2), method_four(), diff(~id1,~id2), ~psk1, ~id1)) // test scenarios with id3 as Responder
-      |       
-      (!R(~cid1, ~id1, ~psk1))
+      (!R(~cidR, ~idR, ~psk))
+      |
+      (!I(cidI, method_four(), idI, ~psk, ~idR))
     )
   )
-)
+
 
 #endif
 
+#ifdef diffEquivAnonymityResponder
 
-// === Equivalence (initiator anonymity, passive attacker) ===
-
-#ifdef EquivLemmas
-
-equivLemma:
-(new ~psk1;
- event Honest(~psk1); 
+diffEquivLemma:
+!
   (
-    new ~cid1; new ~id1; new ~idR1;
-    out(~id1);
+    new ~psk; event Honest(~psk);
+    
+    new ~cid1; new ~cid2;
+    new ~idR1; new ~idR2; new ~idI1;
+    event HonestSubject(~idR1);
+    event HonestSubject(~idR2);
+    event HonestSubject(~idI1);
     out(~idR1);
-
-    (
-      I(~cid1, method_four(), ~id1, ~psk1, ~idR1)
-    |  R(~cid1, ~idR1, ~psk1 )
-      // passive attacker -> do NOT include compromise(~psk1)
-    )
-  )
-)
-
-(
-  new ~psk2;
-  event Honest(~psk2);
-  (
-    new ~cid2; new ~id2; new ~idR2;
-    out(~id2);
     out(~idR2);
+    out(~idI1);
 
-    (
-      I(~cid2, method_four(), ~id2, ~psk2, ~idR2)
-    |  R(~cid2, ~idR2, ~psk2 )
-      // passive attacker -> do NOT include compromise(~psk2)
+    let idR = diff(~idR1,~idR2) in
+    let cidR = diff(~cid1,~cid2) in
+
+    ( 
+      (!R(~cidR, ~idR, ~psk))
+      |
+      (!I(cid1, method_four(), idI1, ~psk, ~idR))
     )
   )
-)
+
+
+#endif
+
+#ifdef diffEquivLinkabilityInitiator
+
+diffEquivLemma: 
+!
+  (
+    new ~psk; event Honest(~psk);
+    
+    new ~cid1; new ~cid2; new ~cidR;
+    new ~id1; new ~id2; new ~idR;
+    event HonestSubject(~id1);
+    event HonestSubject(~id2);
+    event HonestSubject(~idR);
+    out(~id1);
+    out(~id2);
+    out(~idR);
+
+    let idI = diff(~id1,~id2) in
+    let cidI = diff(~cid1,~cid2) in
+
+    ( 
+      (!R(~cidR, ~idR, ~psk))
+      |
+      (!I(cidI, method_four(), idI, ~psk, ~idR))
+      |
+      (!I(cid1, method_four(), id1, ~psk, ~idR))
+    )
+  )
+
+
+#endif
+
+#ifdef diffEquivLinkabilityResponder
+
+diffEquivLemma:
+!
+  (
+    new ~psk; event Honest(~psk);
+    
+    new ~cid1; new ~cid2;
+    new ~idR1; new ~idR2; new ~idI1;
+    event HonestSubject(~idR1);
+    event HonestSubject(~idR2);
+    event HonestSubject(~idI1);
+    out(~idR1);
+    out(~idR2);
+    out(~idI1);
+
+    let idR = diff(~idR1,~idR2) in
+    let cidR = diff(~cid1,~cid2) in
+
+    ( 
+      (!R(~cidR, ~idR, ~psk))
+      |
+      (!I(cid1, method_four(), idI1, ~psk, ~idR))
+      |
+      (!R(~cid1, ~idR1, ~psk))
+      |
+      (!I(cid1, method_four(), idI1, ~psk, ~idR1))
+    )
+  )
 
 #endif
 
