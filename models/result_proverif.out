@@ -1,0 +1,896 @@
+Linear part:
+exp(exp(g,a),b) = exp(exp(g,b),a)
+Completing equations...
+Completed equations:
+exp(exp(g,a),b) = exp(exp(g,b),a)
+Convergent part:
+fst((x_1,x_2)) = x_1
+snd((x_1,x_2)) = x_2
+Completing equations...
+Completed equations:
+snd((x_1,x_2)) = x_2
+fst((x_1,x_2)) = x_1
+Biprocess 0 (that is, the initial process):
+{1}new psk_2: bitstring;
+{2}event eHonest(psk_2);
+{3}new cid1_2: bitstring;
+{4}new cid2_2: bitstring;
+{5}new cidR_2: bitstring;
+{6}new id1_2: bitstring;
+{7}new id2_2: bitstring;
+{8}new idR_2: bitstring;
+{9}event eHonestSubject(id1_2);
+{10}event eHonestSubject(id2_2);
+{11}event eHonestSubject(idR_2);
+{12}out(att, (id1_2,id2_2));
+{13}out(att, idR_2);
+{14}let idI_2: bitstring = choice[id1_2,id2_2] in
+{15}let cidI_2: bitstring = choice[cid1_2,cid2_2] in
+(
+    {16}!
+    {17}let cid_2: bitstring = cidR_2 in
+    {18}let idR: bitstring = idR_2 in
+    {19}let psk: bitstring = psk_2 in
+    {20}in(att, (C_R_2: bitstring,(EAD_2_2: bitstring,suitesR_2: bitstring)));
+    {21}in(att, m1_2: bitstring);
+    {22}let (method_2: bitstring,(suitesI_2: bitstring,(G_X_2: bitstring,(C_I_2: bitstring,EAD_1_2: bitstring)))) = m1_2 in
+    {23}event eMethodOk(method_2);
+    {24}let CRED_R_2: bitstring = idR in
+    {25}new Y_2: bitstring;
+    {26}new EAD_4_2: bitstring;
+    {27}event eShare(Y_2);
+    {28}event eLeakEAD(EAD_4_2);
+    (
+        {29}let s_2: bitstring = Y_2 in
+        {30}event eLeakShare(snull)
+    ) | (
+        {31}event eRespondWithID(CRED_R_2);
+        {32}event eStartR(cid_2,method_2,CRED_R_2,psk);
+        {33}let G_Y_2: bitstring = exp(g,Y_2) in
+        {34}let G_XY_2: bitstring = exp(G_X_2,Y_2) in
+        {35}let TH_1_2: bitstring = hash((wrap(method_2),(wrap(suitesI_2),(wrap(G_X_2),(wrap(C_I_2),EAD_1_2))))) in
+        {36}let TH_2_2: bitstring = hash((wrap(G_Y_2),wrap(TH_1_2))) in
+        {37}let PRK_2e_2: bitstring = hkdfextract(TH_2_2,G_XY_2) in
+        {38}let =method_2 = method_four in
+        {39}let plaintext_2_2: bitstring = (C_R_2,EAD_2_2) in
+        {40}let KEYSTREAM_2A_2: bitstring = edhoc_kdf(PRK_2e_2,stzero,TH_2_2,plaintext_length) in
+        {41}event eTHRShared(TH_2_2);
+        {42}event eDerivedRShared(G_XY_2);
+        {43}let m2_2: bitstring = (G_Y_2,encxor(plaintext_2_2,KEYSTREAM_2A_2)) in
+        {44}event eSendRData(cid_2,method_2,CRED_R_2,psk,m2_2);
+        {45}out(att, m2_2);
+        {46}in(att, m3_2: bitstring);
+        {47}let TH_3_2: bitstring = hash((wrap(TH_2_2),plaintext_2_2)) in
+        {48}let PRK_3e2m_2: bitstring = PRK_2e_2 in
+        {49}let KEYSTREAM_3_2: bitstring = edhoc_kdf(PRK_3e2m_2,seleven,TH_3_2,plaintext_length) in
+        {50}let plaintext_3a_2: bitstring = decxor(m3_2,KEYSTREAM_3_2) in
+        {51}let (ID_CRED_PSK_in_2: bitstring,ciphertext_3b_2: bitstring) = plaintext_3a_2 in
+        {52}let CRED_I_2: bitstring = get_cred(ID_CRED_PSK_in_2,psk,CRED_R_2) in
+        {53}let =CRED_I_2 = CRED_R_2 in
+            0
+        else
+            {54}event eReceivedRm3(cid_2,method_2,CRED_I_2,CRED_R_2,psk,Y_2,G_X_2,m3_2);
+            {55}let SALT_4e3m_2: bitstring = edhoc_kdf(PRK_3e2m_2,sfive,TH_3_2,hash_length) in
+            {56}let PRK_4e3m_2: bitstring = hkdfextract(psk,SALT_4e3m_2) in
+            {57}let K_3_2: bitstring = edhoc_kdf(PRK_4e3m_2,stwelve,TH_3_2,key_length) in
+            {58}let IV_3_2: bitstring = edhoc_kdf(PRK_3e2m_2,sthirteen,TH_3_2,iv_length) in
+            {59}let external_aad_3_2: bitstring = (ID_CRED_PSK_in_2,(TH_3_2,(CRED_I_2,CRED_R_2))) in
+            {60}let ad_3_2: bitstring = (sEncrypt0,(sempty,external_aad_3_2)) in
+            {61}let plaintext_3b_2: bitstring = aeaddec(ciphertext_3b_2,K_3_2,IV_3_2,ad_3_2) in
+            {62}let EAD_3_2: bitstring = plaintext_3b_2 in
+            {63}let TH_4_2: bitstring = hash((wrap(TH_3_2),(ID_CRED_PSK_in_2,(plaintext_3b_2,(CRED_I_2,CRED_R_2))))) in
+            {64}let K_4_2: bitstring = edhoc_kdf(PRK_4e3m_2,seight,TH_4_2,key_length) in
+            {65}let IV_4_2: bitstring = edhoc_kdf(PRK_3e2m_2,snine,TH_4_2,iv_length) in
+            {66}let PRK_out_2: bitstring = edhoc_kdf(PRK_4e3m_2,sseven,TH_4_2,hash_length) in
+            {67}let external_aad_4_2: bitstring = TH_4_2 in
+            {68}let ad_4_2: bitstring = (sEncrypt0,(sempty,external_aad_4_2)) in
+            {69}let m4_2: bitstring = aeadenc(EAD_4_2,K_4_2,IV_4_2,ad_4_2) in
+            {70}event eDerivedR(cid_2,PRK_out_2,Y_2,G_X_2,psk);
+            {71}event eTransmitEAD(m4_2,EAD_4_2,PRK_out_2);
+            {72}event eAcceptR(cid_2,method_2,CRED_I_2,CRED_R_2,PRK_out_2,G_X_2,Y_2,psk);
+            {73}event eAcceptRData(PRK_out_2,method_2,CRED_I_2,CRED_R_2,psk,Y_2,G_X_2,(TH_2_2,(TH_3_2,(TH_4_2,(suitesI_2,(EAD_1_2,(EAD_2_2,(EAD_3_2,(m1_2,(plaintext_2_2,plaintext_3a_2))))))))));
+            {74}out(att, m4_2);
+            (
+                0
+            ) | (
+                {75}event eLeakSessionKey(snull)
+            )
+    )
+) | (
+    {76}!
+    {77}let method: bitstring = method_four in
+    {78}let psk_1: bitstring = psk_2 in
+    {79}let cred_2: bitstring = idR_2 in
+    {80}in(att, (suitesI: bitstring,(C_I: bitstring,EAD_1: bitstring)));
+    {81}event eMethodOk(method);
+    {82}let CRED_I: bitstring = idI_2 in
+    {83}let CRED_R: bitstring = cred_2 in
+    {84}let ID_CRED_PSK_2: bitstring = make_id(CRED_I,CRED_R,psk_1) in
+    {85}new X_2: bitstring;
+    {86}new EAD_3: bitstring;
+    {87}event eShare(X_2);
+    {88}event eLeakEAD(EAD_3);
+    {89}let =CRED_I = CRED_R in
+        0
+    else
+        (
+            {90}let s: bitstring = X_2 in
+            {91}event eLeakShare(snull)
+        ) | (
+            {92}event eInitiateWithID(CRED_I,CRED_R);
+            {93}event eStartI(cidI_2,method,CRED_I,CRED_R,psk_1);
+            {94}let G_X: bitstring = exp(g,X_2) in
+            {95}let m1: bitstring = (method,(suitesI,(G_X,(C_I,EAD_1)))) in
+            {96}out(att, m1);
+            {97}in(att, m2: bitstring);
+            {98}event eReceivedRData(cidI_2,method,CRED_I,CRED_R,psk_1,X_2,m2);
+            {99}let (G_Y: bitstring,CIPHERTEXT_2_2: bitstring) = m2 in
+            {100}let TH_1: bitstring = hash((wrap(method),(wrap(suitesI),(wrap(G_X),(wrap(C_I),EAD_1))))) in
+            {101}let TH_2: bitstring = hash((wrap(G_Y),wrap(TH_1))) in
+            {102}let G_YX_2: bitstring = exp(G_Y,X_2) in
+            {103}let PRK_2e: bitstring = hkdfextract(TH_2,G_YX_2) in
+            {104}let KEYSTREAM_2A: bitstring = edhoc_kdf(PRK_2e,stzero,TH_2,plaintext_length) in
+            {105}let plaintext_2: bitstring = decxor(CIPHERTEXT_2_2,KEYSTREAM_2A) in
+            {106}let (C_R: bitstring,EAD_2: bitstring) = plaintext_2 in
+            {107}let =method = method_four in
+            {108}let PRK_3e2m: bitstring = PRK_2e in
+            {109}event eDerivedIShared(G_YX_2);
+            {110}let TH_3: bitstring = hash((wrap(TH_2),plaintext_2)) in
+            {111}let SALT_4e3m: bitstring = edhoc_kdf(PRK_3e2m,sfive,TH_3,hash_length) in
+            {112}let PRK_4e3m: bitstring = hkdfextract(psk_1,SALT_4e3m) in
+            {113}let KEYSTREAM_3A_2: bitstring = edhoc_kdf(PRK_3e2m,seleven,TH_3,plaintext_length) in
+            {114}let K_3: bitstring = edhoc_kdf(PRK_4e3m,stwelve,TH_3,key_length) in
+            {115}let IV_3: bitstring = edhoc_kdf(PRK_3e2m,sthirteen,TH_3,iv_length) in
+            {116}let external_aad_3: bitstring = (ID_CRED_PSK_2,(TH_3,(CRED_I,CRED_R))) in
+            {117}let ad_3: bitstring = (sEncrypt0,(sempty,external_aad_3)) in
+            {118}let plaintext_3b: bitstring = EAD_3 in
+            {119}let ciphertext_3b: bitstring = aeadenc(plaintext_3b,K_3,IV_3,ad_3) in
+            {120}let plaintext_3a: bitstring = (ID_CRED_PSK_2,ciphertext_3b) in
+            {121}let m3: bitstring = encxor(plaintext_3a,KEYSTREAM_3A_2) in
+            {122}let TH_4: bitstring = hash((wrap(TH_3),(ID_CRED_PSK_2,(plaintext_3b,(CRED_I,CRED_R))))) in
+            {123}let K_4: bitstring = edhoc_kdf(PRK_4e3m,seight,TH_4,key_length) in
+            {124}let IV_4: bitstring = edhoc_kdf(PRK_3e2m,snine,TH_4,iv_length) in
+            {125}let PRK_out: bitstring = edhoc_kdf(PRK_4e3m,sseven,TH_4,hash_length) in
+            {126}event eDerivedI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1);
+            {127}event eExplicitDerivedI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1,G_YX_2);
+            {128}event eSendIData(PRK_out,method,CRED_I,CRED_R,psk_1,X_2,G_Y,(TH_2,(TH_3,(TH_4,(suitesI,(EAD_1,(EAD_2,(EAD_3,(m1,(plaintext_2,plaintext_3a))))))))));
+            {129}event eSendIm3(cidI_2,method,CRED_I,CRED_R,psk_1,X_2,G_Y,m3);
+            {130}out(att, m3);
+            {131}event eTransmitEAD(m3,EAD_3,PRK_4e3m);
+            (
+                {132}in(att, m4: bitstring);
+                {133}let external_aad_4: bitstring = TH_4 in
+                {134}let ad_4: bitstring = (sEncrypt0,(sempty,external_aad_4)) in
+                {135}let plaintext_4_2: bitstring = aeaddec(m4,K_4,IV_4,ad_4) in
+                {136}let EAD_4: bitstring = plaintext_4_2 in
+                {137}event eAcceptIData(PRK_out,method,CRED_I,CRED_R,psk_1,X_2,G_Y,(TH_2,(TH_3,(TH_4,(suitesI,(EAD_1,(EAD_2,(EAD_3,(m1,(plaintext_2,(plaintext_3a,plaintext_4_2)))))))))));
+                {138}event eAcceptI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1)
+            ) | (
+                {139}event eLeakSessionKey(snull)
+            )
+        )
+) | (
+    {140}!
+    {141}let cid: bitstring = cid1_2 in
+    {142}let method_1: bitstring = method_four in
+    {143}let credI_2: bitstring = id1_2 in
+    {144}let psk_3: bitstring = psk_2 in
+    {145}let cred: bitstring = idR_2 in
+    {146}in(att, (suitesI_1: bitstring,(C_I_1: bitstring,EAD_1_1: bitstring)));
+    {147}event eMethodOk(method_1);
+    {148}let CRED_I_1: bitstring = credI_2 in
+    {149}let CRED_R_1: bitstring = cred in
+    {150}let ID_CRED_PSK: bitstring = make_id(CRED_I_1,CRED_R_1,psk_3) in
+    {151}new X: bitstring;
+    {152}new EAD_3_1: bitstring;
+    {153}event eShare(X);
+    {154}event eLeakEAD(EAD_3_1);
+    {155}let =CRED_I_1 = CRED_R_1 in
+        0
+    else
+        (
+            {156}let s_1: bitstring = X in
+            {157}event eLeakShare(snull)
+        ) | (
+            {158}event eInitiateWithID(CRED_I_1,CRED_R_1);
+            {159}event eStartI(cid,method_1,CRED_I_1,CRED_R_1,psk_3);
+            {160}let G_X_1: bitstring = exp(g,X) in
+            {161}let m1_1: bitstring = (method_1,(suitesI_1,(G_X_1,(C_I_1,EAD_1_1)))) in
+            {162}out(att, m1_1);
+            {163}in(att, m2_1: bitstring);
+            {164}event eReceivedRData(cid,method_1,CRED_I_1,CRED_R_1,psk_3,X,m2_1);
+            {165}let (G_Y_1: bitstring,CIPHERTEXT_2: bitstring) = m2_1 in
+            {166}let TH_1_1: bitstring = hash((wrap(method_1),(wrap(suitesI_1),(wrap(G_X_1),(wrap(C_I_1),EAD_1_1))))) in
+            {167}let TH_2_1: bitstring = hash((wrap(G_Y_1),wrap(TH_1_1))) in
+            {168}let G_YX: bitstring = exp(G_Y_1,X) in
+            {169}let PRK_2e_1: bitstring = hkdfextract(TH_2_1,G_YX) in
+            {170}let KEYSTREAM_2A_1: bitstring = edhoc_kdf(PRK_2e_1,stzero,TH_2_1,plaintext_length) in
+            {171}let plaintext_2_1: bitstring = decxor(CIPHERTEXT_2,KEYSTREAM_2A_1) in
+            {172}let (C_R_1: bitstring,EAD_2_1: bitstring) = plaintext_2_1 in
+            {173}let =method_1 = method_four in
+            {174}let PRK_3e2m_1: bitstring = PRK_2e_1 in
+            {175}event eDerivedIShared(G_YX);
+            {176}let TH_3_1: bitstring = hash((wrap(TH_2_1),plaintext_2_1)) in
+            {177}let SALT_4e3m_1: bitstring = edhoc_kdf(PRK_3e2m_1,sfive,TH_3_1,hash_length) in
+            {178}let PRK_4e3m_1: bitstring = hkdfextract(psk_3,SALT_4e3m_1) in
+            {179}let KEYSTREAM_3A: bitstring = edhoc_kdf(PRK_3e2m_1,seleven,TH_3_1,plaintext_length) in
+            {180}let K_3_1: bitstring = edhoc_kdf(PRK_4e3m_1,stwelve,TH_3_1,key_length) in
+            {181}let IV_3_1: bitstring = edhoc_kdf(PRK_3e2m_1,sthirteen,TH_3_1,iv_length) in
+            {182}let external_aad_3_1: bitstring = (ID_CRED_PSK,(TH_3_1,(CRED_I_1,CRED_R_1))) in
+            {183}let ad_3_1: bitstring = (sEncrypt0,(sempty,external_aad_3_1)) in
+            {184}let plaintext_3b_1: bitstring = EAD_3_1 in
+            {185}let ciphertext_3b_1: bitstring = aeadenc(plaintext_3b_1,K_3_1,IV_3_1,ad_3_1) in
+            {186}let plaintext_3a_1: bitstring = (ID_CRED_PSK,ciphertext_3b_1) in
+            {187}let m3_1: bitstring = encxor(plaintext_3a_1,KEYSTREAM_3A) in
+            {188}let TH_4_1: bitstring = hash((wrap(TH_3_1),(ID_CRED_PSK,(plaintext_3b_1,(CRED_I_1,CRED_R_1))))) in
+            {189}let K_4_1: bitstring = edhoc_kdf(PRK_4e3m_1,seight,TH_4_1,key_length) in
+            {190}let IV_4_1: bitstring = edhoc_kdf(PRK_3e2m_1,snine,TH_4_1,iv_length) in
+            {191}let PRK_out_1: bitstring = edhoc_kdf(PRK_4e3m_1,sseven,TH_4_1,hash_length) in
+            {192}event eDerivedI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3);
+            {193}event eExplicitDerivedI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3,G_YX);
+            {194}event eSendIData(PRK_out_1,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,(TH_2_1,(TH_3_1,(TH_4_1,(suitesI_1,(EAD_1_1,(EAD_2_1,(EAD_3_1,(m1_1,(plaintext_2_1,plaintext_3a_1))))))))));
+            {195}event eSendIm3(cid,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,m3_1);
+            {196}out(att, m3_1);
+            {197}event eTransmitEAD(m3_1,EAD_3_1,PRK_4e3m_1);
+            (
+                {198}in(att, m4_1: bitstring);
+                {199}let external_aad_4_1: bitstring = TH_4_1 in
+                {200}let ad_4_1: bitstring = (sEncrypt0,(sempty,external_aad_4_1)) in
+                {201}let plaintext_4: bitstring = aeaddec(m4_1,K_4_1,IV_4_1,ad_4_1) in
+                {202}let EAD_4_1: bitstring = plaintext_4 in
+                {203}event eAcceptIData(PRK_out_1,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,(TH_2_1,(TH_3_1,(TH_4_1,(suitesI_1,(EAD_1_1,(EAD_2_1,(EAD_3_1,(m1_1,(plaintext_2_1,(plaintext_3a_1,plaintext_4)))))))))));
+                {204}event eAcceptI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3)
+            ) | (
+                {205}event eLeakSessionKey(snull)
+            )
+        )
+)
+
+--  Biprocess 1 (that is, biprocess 0, with let moved downwards):
+{1}new psk_2: bitstring;
+{2}event eHonest(psk_2);
+{3}new cid1_2: bitstring;
+{4}new cid2_2: bitstring;
+{5}new cidR_2: bitstring;
+{6}new id1_2: bitstring;
+{7}new id2_2: bitstring;
+{8}new idR_2: bitstring;
+{9}event eHonestSubject(id1_2);
+{10}event eHonestSubject(id2_2);
+{11}event eHonestSubject(idR_2);
+{12}out(att, (id1_2,id2_2));
+{13}out(att, idR_2);
+(
+    {16}!
+    {20}in(att, (C_R_2: bitstring,(EAD_2_2: bitstring,suitesR_2: bitstring)));
+    {21}in(att, m1_2: bitstring);
+    {22}let (method_2: bitstring,(suitesI_2: bitstring,(G_X_2: bitstring,(C_I_2: bitstring,EAD_1_2: bitstring)))) = m1_2 in
+    {23}event eMethodOk(method_2);
+    {25}new Y_2: bitstring;
+    {26}new EAD_4_2: bitstring;
+    {27}event eShare(Y_2);
+    {28}event eLeakEAD(EAD_4_2);
+    (
+        {30}event eLeakShare(snull)
+    ) | (
+        {18}let idR: bitstring = idR_2 in
+        {24}let CRED_R_2: bitstring = idR in
+        {31}event eRespondWithID(CRED_R_2);
+        {19}let psk: bitstring = psk_2 in
+        {17}let cid_2: bitstring = cidR_2 in
+        {32}event eStartR(cid_2,method_2,CRED_R_2,psk);
+        {38}let =method_2 = method_four in
+        {35}let TH_1_2: bitstring = hash((wrap(method_2),(wrap(suitesI_2),(wrap(G_X_2),(wrap(C_I_2),EAD_1_2))))) in
+        {33}let G_Y_2: bitstring = exp(g,Y_2) in
+        {36}let TH_2_2: bitstring = hash((wrap(G_Y_2),wrap(TH_1_2))) in
+        {41}event eTHRShared(TH_2_2);
+        {34}let G_XY_2: bitstring = exp(G_X_2,Y_2) in
+        {42}event eDerivedRShared(G_XY_2);
+        {37}let PRK_2e_2: bitstring = hkdfextract(TH_2_2,G_XY_2) in
+        {40}let KEYSTREAM_2A_2: bitstring = edhoc_kdf(PRK_2e_2,stzero,TH_2_2,plaintext_length) in
+        {39}let plaintext_2_2: bitstring = (C_R_2,EAD_2_2) in
+        {43}let m2_2: bitstring = (G_Y_2,encxor(plaintext_2_2,KEYSTREAM_2A_2)) in
+        {44}event eSendRData(cid_2,method_2,CRED_R_2,psk,m2_2);
+        {45}out(att, m2_2);
+        {46}in(att, m3_2: bitstring);
+        {48}let PRK_3e2m_2: bitstring = PRK_2e_2 in
+        {47}let TH_3_2: bitstring = hash((wrap(TH_2_2),plaintext_2_2)) in
+        {49}let KEYSTREAM_3_2: bitstring = edhoc_kdf(PRK_3e2m_2,seleven,TH_3_2,plaintext_length) in
+        {50}let plaintext_3a_2: bitstring = decxor(m3_2,KEYSTREAM_3_2) in
+        {51}let (ID_CRED_PSK_in_2: bitstring,ciphertext_3b_2: bitstring) = plaintext_3a_2 in
+        {52}let CRED_I_2: bitstring = get_cred(ID_CRED_PSK_in_2,psk,CRED_R_2) in
+        {53}let =CRED_I_2 = CRED_R_2 in
+            0
+        else
+            {54}event eReceivedRm3(cid_2,method_2,CRED_I_2,CRED_R_2,psk,Y_2,G_X_2,m3_2);
+            {59}let external_aad_3_2: bitstring = (ID_CRED_PSK_in_2,(TH_3_2,(CRED_I_2,CRED_R_2))) in
+            {60}let ad_3_2: bitstring = (sEncrypt0,(sempty,external_aad_3_2)) in
+            {58}let IV_3_2: bitstring = edhoc_kdf(PRK_3e2m_2,sthirteen,TH_3_2,iv_length) in
+            {55}let SALT_4e3m_2: bitstring = edhoc_kdf(PRK_3e2m_2,sfive,TH_3_2,hash_length) in
+            {56}let PRK_4e3m_2: bitstring = hkdfextract(psk,SALT_4e3m_2) in
+            {57}let K_3_2: bitstring = edhoc_kdf(PRK_4e3m_2,stwelve,TH_3_2,key_length) in
+            {61}let plaintext_3b_2: bitstring = aeaddec(ciphertext_3b_2,K_3_2,IV_3_2,ad_3_2) in
+            {63}let TH_4_2: bitstring = hash((wrap(TH_3_2),(ID_CRED_PSK_in_2,(plaintext_3b_2,(CRED_I_2,CRED_R_2))))) in
+            {66}let PRK_out_2: bitstring = edhoc_kdf(PRK_4e3m_2,sseven,TH_4_2,hash_length) in
+            {70}event eDerivedR(cid_2,PRK_out_2,Y_2,G_X_2,psk);
+            {67}let external_aad_4_2: bitstring = TH_4_2 in
+            {68}let ad_4_2: bitstring = (sEncrypt0,(sempty,external_aad_4_2)) in
+            {65}let IV_4_2: bitstring = edhoc_kdf(PRK_3e2m_2,snine,TH_4_2,iv_length) in
+            {64}let K_4_2: bitstring = edhoc_kdf(PRK_4e3m_2,seight,TH_4_2,key_length) in
+            {69}let m4_2: bitstring = aeadenc(EAD_4_2,K_4_2,IV_4_2,ad_4_2) in
+            {71}event eTransmitEAD(m4_2,EAD_4_2,PRK_out_2);
+            {72}event eAcceptR(cid_2,method_2,CRED_I_2,CRED_R_2,PRK_out_2,G_X_2,Y_2,psk);
+            {62}let EAD_3_2: bitstring = plaintext_3b_2 in
+            {73}event eAcceptRData(PRK_out_2,method_2,CRED_I_2,CRED_R_2,psk,Y_2,G_X_2,(TH_2_2,(TH_3_2,(TH_4_2,(suitesI_2,(EAD_1_2,(EAD_2_2,(EAD_3_2,(m1_2,(plaintext_2_2,plaintext_3a_2))))))))));
+            {74}out(att, m4_2);
+            (
+                0
+            ) | (
+                {75}event eLeakSessionKey(snull)
+            )
+    )
+) | (
+    {76}!
+    {80}in(att, (suitesI: bitstring,(C_I: bitstring,EAD_1: bitstring)));
+    {77}let method: bitstring = method_four in
+    {81}event eMethodOk(method);
+    {85}new X_2: bitstring;
+    {86}new EAD_3: bitstring;
+    {87}event eShare(X_2);
+    {88}event eLeakEAD(EAD_3);
+    {79}let cred_2: bitstring = idR_2 in
+    {83}let CRED_R: bitstring = cred_2 in
+    {14}let idI_2: bitstring = choice[id1_2,id2_2] in
+    {82}let CRED_I: bitstring = idI_2 in
+    {89}let =CRED_I = CRED_R in
+        0
+    else
+        (
+            {91}event eLeakShare(snull)
+        ) | (
+            {92}event eInitiateWithID(CRED_I,CRED_R);
+            {78}let psk_1: bitstring = psk_2 in
+            {15}let cidI_2: bitstring = choice[cid1_2,cid2_2] in
+            {93}event eStartI(cidI_2,method,CRED_I,CRED_R,psk_1);
+            {94}let G_X: bitstring = exp(g,X_2) in
+            {95}let m1: bitstring = (method,(suitesI,(G_X,(C_I,EAD_1)))) in
+            {96}out(att, m1);
+            {97}in(att, m2: bitstring);
+            {98}event eReceivedRData(cidI_2,method,CRED_I,CRED_R,psk_1,X_2,m2);
+            {99}let (G_Y: bitstring,CIPHERTEXT_2_2: bitstring) = m2 in
+            {102}let G_YX_2: bitstring = exp(G_Y,X_2) in
+            {100}let TH_1: bitstring = hash((wrap(method),(wrap(suitesI),(wrap(G_X),(wrap(C_I),EAD_1))))) in
+            {101}let TH_2: bitstring = hash((wrap(G_Y),wrap(TH_1))) in
+            {103}let PRK_2e: bitstring = hkdfextract(TH_2,G_YX_2) in
+            {104}let KEYSTREAM_2A: bitstring = edhoc_kdf(PRK_2e,stzero,TH_2,plaintext_length) in
+            {105}let plaintext_2: bitstring = decxor(CIPHERTEXT_2_2,KEYSTREAM_2A) in
+            {106}let (C_R: bitstring,EAD_2: bitstring) = plaintext_2 in
+            {107}let =method = method_four in
+            {109}event eDerivedIShared(G_YX_2);
+            {118}let plaintext_3b: bitstring = EAD_3 in
+            {110}let TH_3: bitstring = hash((wrap(TH_2),plaintext_2)) in
+            {84}let ID_CRED_PSK_2: bitstring = make_id(CRED_I,CRED_R,psk_1) in
+            {122}let TH_4: bitstring = hash((wrap(TH_3),(ID_CRED_PSK_2,(plaintext_3b,(CRED_I,CRED_R))))) in
+            {108}let PRK_3e2m: bitstring = PRK_2e in
+            {111}let SALT_4e3m: bitstring = edhoc_kdf(PRK_3e2m,sfive,TH_3,hash_length) in
+            {112}let PRK_4e3m: bitstring = hkdfextract(psk_1,SALT_4e3m) in
+            {125}let PRK_out: bitstring = edhoc_kdf(PRK_4e3m,sseven,TH_4,hash_length) in
+            {126}event eDerivedI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1);
+            {127}event eExplicitDerivedI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1,G_YX_2);
+            {116}let external_aad_3: bitstring = (ID_CRED_PSK_2,(TH_3,(CRED_I,CRED_R))) in
+            {117}let ad_3: bitstring = (sEncrypt0,(sempty,external_aad_3)) in
+            {115}let IV_3: bitstring = edhoc_kdf(PRK_3e2m,sthirteen,TH_3,iv_length) in
+            {114}let K_3: bitstring = edhoc_kdf(PRK_4e3m,stwelve,TH_3,key_length) in
+            {119}let ciphertext_3b: bitstring = aeadenc(plaintext_3b,K_3,IV_3,ad_3) in
+            {120}let plaintext_3a: bitstring = (ID_CRED_PSK_2,ciphertext_3b) in
+            {128}event eSendIData(PRK_out,method,CRED_I,CRED_R,psk_1,X_2,G_Y,(TH_2,(TH_3,(TH_4,(suitesI,(EAD_1,(EAD_2,(EAD_3,(m1,(plaintext_2,plaintext_3a))))))))));
+            {113}let KEYSTREAM_3A_2: bitstring = edhoc_kdf(PRK_3e2m,seleven,TH_3,plaintext_length) in
+            {121}let m3: bitstring = encxor(plaintext_3a,KEYSTREAM_3A_2) in
+            {129}event eSendIm3(cidI_2,method,CRED_I,CRED_R,psk_1,X_2,G_Y,m3);
+            {130}out(att, m3);
+            {131}event eTransmitEAD(m3,EAD_3,PRK_4e3m);
+            (
+                {132}in(att, m4: bitstring);
+                {133}let external_aad_4: bitstring = TH_4 in
+                {134}let ad_4: bitstring = (sEncrypt0,(sempty,external_aad_4)) in
+                {124}let IV_4: bitstring = edhoc_kdf(PRK_3e2m,snine,TH_4,iv_length) in
+                {123}let K_4: bitstring = edhoc_kdf(PRK_4e3m,seight,TH_4,key_length) in
+                {135}let plaintext_4_2: bitstring = aeaddec(m4,K_4,IV_4,ad_4) in
+                {137}event eAcceptIData(PRK_out,method,CRED_I,CRED_R,psk_1,X_2,G_Y,(TH_2,(TH_3,(TH_4,(suitesI,(EAD_1,(EAD_2,(EAD_3,(m1,(plaintext_2,(plaintext_3a,plaintext_4_2)))))))))));
+                {138}event eAcceptI(cidI_2,method,CRED_I,CRED_R,PRK_out,X_2,G_Y,psk_1)
+            ) | (
+                {139}event eLeakSessionKey(snull)
+            )
+        )
+) | (
+    {140}!
+    {146}in(att, (suitesI_1: bitstring,(C_I_1: bitstring,EAD_1_1: bitstring)));
+    {142}let method_1: bitstring = method_four in
+    {147}event eMethodOk(method_1);
+    {151}new X: bitstring;
+    {152}new EAD_3_1: bitstring;
+    {153}event eShare(X);
+    {154}event eLeakEAD(EAD_3_1);
+    {145}let cred: bitstring = idR_2 in
+    {149}let CRED_R_1: bitstring = cred in
+    {143}let credI_2: bitstring = id1_2 in
+    {148}let CRED_I_1: bitstring = credI_2 in
+    {155}let =CRED_I_1 = CRED_R_1 in
+        0
+    else
+        (
+            {157}event eLeakShare(snull)
+        ) | (
+            {158}event eInitiateWithID(CRED_I_1,CRED_R_1);
+            {144}let psk_3: bitstring = psk_2 in
+            {141}let cid: bitstring = cid1_2 in
+            {159}event eStartI(cid,method_1,CRED_I_1,CRED_R_1,psk_3);
+            {160}let G_X_1: bitstring = exp(g,X) in
+            {161}let m1_1: bitstring = (method_1,(suitesI_1,(G_X_1,(C_I_1,EAD_1_1)))) in
+            {162}out(att, m1_1);
+            {163}in(att, m2_1: bitstring);
+            {164}event eReceivedRData(cid,method_1,CRED_I_1,CRED_R_1,psk_3,X,m2_1);
+            {165}let (G_Y_1: bitstring,CIPHERTEXT_2: bitstring) = m2_1 in
+            {168}let G_YX: bitstring = exp(G_Y_1,X) in
+            {166}let TH_1_1: bitstring = hash((wrap(method_1),(wrap(suitesI_1),(wrap(G_X_1),(wrap(C_I_1),EAD_1_1))))) in
+            {167}let TH_2_1: bitstring = hash((wrap(G_Y_1),wrap(TH_1_1))) in
+            {169}let PRK_2e_1: bitstring = hkdfextract(TH_2_1,G_YX) in
+            {170}let KEYSTREAM_2A_1: bitstring = edhoc_kdf(PRK_2e_1,stzero,TH_2_1,plaintext_length) in
+            {171}let plaintext_2_1: bitstring = decxor(CIPHERTEXT_2,KEYSTREAM_2A_1) in
+            {172}let (C_R_1: bitstring,EAD_2_1: bitstring) = plaintext_2_1 in
+            {173}let =method_1 = method_four in
+            {175}event eDerivedIShared(G_YX);
+            {184}let plaintext_3b_1: bitstring = EAD_3_1 in
+            {176}let TH_3_1: bitstring = hash((wrap(TH_2_1),plaintext_2_1)) in
+            {150}let ID_CRED_PSK: bitstring = make_id(CRED_I_1,CRED_R_1,psk_3) in
+            {188}let TH_4_1: bitstring = hash((wrap(TH_3_1),(ID_CRED_PSK,(plaintext_3b_1,(CRED_I_1,CRED_R_1))))) in
+            {174}let PRK_3e2m_1: bitstring = PRK_2e_1 in
+            {177}let SALT_4e3m_1: bitstring = edhoc_kdf(PRK_3e2m_1,sfive,TH_3_1,hash_length) in
+            {178}let PRK_4e3m_1: bitstring = hkdfextract(psk_3,SALT_4e3m_1) in
+            {191}let PRK_out_1: bitstring = edhoc_kdf(PRK_4e3m_1,sseven,TH_4_1,hash_length) in
+            {192}event eDerivedI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3);
+            {193}event eExplicitDerivedI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3,G_YX);
+            {182}let external_aad_3_1: bitstring = (ID_CRED_PSK,(TH_3_1,(CRED_I_1,CRED_R_1))) in
+            {183}let ad_3_1: bitstring = (sEncrypt0,(sempty,external_aad_3_1)) in
+            {181}let IV_3_1: bitstring = edhoc_kdf(PRK_3e2m_1,sthirteen,TH_3_1,iv_length) in
+            {180}let K_3_1: bitstring = edhoc_kdf(PRK_4e3m_1,stwelve,TH_3_1,key_length) in
+            {185}let ciphertext_3b_1: bitstring = aeadenc(plaintext_3b_1,K_3_1,IV_3_1,ad_3_1) in
+            {186}let plaintext_3a_1: bitstring = (ID_CRED_PSK,ciphertext_3b_1) in
+            {194}event eSendIData(PRK_out_1,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,(TH_2_1,(TH_3_1,(TH_4_1,(suitesI_1,(EAD_1_1,(EAD_2_1,(EAD_3_1,(m1_1,(plaintext_2_1,plaintext_3a_1))))))))));
+            {179}let KEYSTREAM_3A: bitstring = edhoc_kdf(PRK_3e2m_1,seleven,TH_3_1,plaintext_length) in
+            {187}let m3_1: bitstring = encxor(plaintext_3a_1,KEYSTREAM_3A) in
+            {195}event eSendIm3(cid,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,m3_1);
+            {196}out(att, m3_1);
+            {197}event eTransmitEAD(m3_1,EAD_3_1,PRK_4e3m_1);
+            (
+                {198}in(att, m4_1: bitstring);
+                {199}let external_aad_4_1: bitstring = TH_4_1 in
+                {200}let ad_4_1: bitstring = (sEncrypt0,(sempty,external_aad_4_1)) in
+                {190}let IV_4_1: bitstring = edhoc_kdf(PRK_3e2m_1,snine,TH_4_1,iv_length) in
+                {189}let K_4_1: bitstring = edhoc_kdf(PRK_4e3m_1,seight,TH_4_1,key_length) in
+                {201}let plaintext_4: bitstring = aeaddec(m4_1,K_4_1,IV_4_1,ad_4_1) in
+                {203}event eAcceptIData(PRK_out_1,method_1,CRED_I_1,CRED_R_1,psk_3,X,G_Y_1,(TH_2_1,(TH_3_1,(TH_4_1,(suitesI_1,(EAD_1_1,(EAD_2_1,(EAD_3_1,(m1_1,(plaintext_2_1,(plaintext_3a_1,plaintext_4)))))))))));
+                {204}event eAcceptI(cid,method_1,CRED_I_1,CRED_R_1,PRK_out_1,X,G_Y_1,psk_3)
+            ) | (
+                {205}event eLeakSessionKey(snull)
+            )
+        )
+)
+
+-- Axiom event(eShare(k)) && attacker(k) ==> event(eLeakShare(k)) encoded as event2(eShare(k),eShare(k)) && attacker2(k,k) ==> event2(eLeakShare(k),eLeakShare(k)) in biprocess 1.
+-- Observational equivalence in biprocess 1.
+Translating the process into Horn clauses...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+Completing...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+200 rules inserted. Base: 200 rules (57 with conclusion selected). Queue: 152 rules.
+400 rules inserted. Base: 398 rules (81 with conclusion selected). Queue: 214 rules.
+600 rules inserted. Base: 596 rules (81 with conclusion selected). Queue: 176 rules.
+800 rules inserted. Base: 752 rules (83 with conclusion selected). Queue: 140 rules.
+1000 rules inserted. Base: 944 rules (90 with conclusion selected). Queue: 209 rules.
+1200 rules inserted. Base: 1136 rules (92 with conclusion selected). Queue: 318 rules.
+1400 rules inserted. Base: 1324 rules (97 with conclusion selected). Queue: 404 rules.
+1600 rules inserted. Base: 1504 rules (97 with conclusion selected). Queue: 422 rules.
+1800 rules inserted. Base: 1638 rules (97 with conclusion selected). Queue: 442 rules.
+2000 rules inserted. Base: 1798 rules (97 with conclusion selected). Queue: 519 rules.
+2200 rules inserted. Base: 1958 rules (97 with conclusion selected). Queue: 518 rules.
+2400 rules inserted. Base: 2135 rules (97 with conclusion selected). Queue: 584 rules.
+2600 rules inserted. Base: 2321 rules (97 with conclusion selected). Queue: 675 rules.
+2800 rules inserted. Base: 2506 rules (97 with conclusion selected). Queue: 654 rules.
+3000 rules inserted. Base: 2696 rules (97 with conclusion selected). Queue: 680 rules.
+3200 rules inserted. Base: 2880 rules (97 with conclusion selected). Queue: 691 rules.
+3400 rules inserted. Base: 3064 rules (97 with conclusion selected). Queue: 718 rules.
+3600 rules inserted. Base: 3247 rules (97 with conclusion selected). Queue: 778 rules.
+3800 rules inserted. Base: 3417 rules (98 with conclusion selected). Queue: 739 rules.
+4000 rules inserted. Base: 3614 rules (99 with conclusion selected). Queue: 738 rules.
+4200 rules inserted. Base: 3784 rules (99 with conclusion selected). Queue: 661 rules.
+4400 rules inserted. Base: 3981 rules (99 with conclusion selected). Queue: 481 rules.
+4600 rules inserted. Base: 4151 rules (99 with conclusion selected). Queue: 346 rules.
+4800 rules inserted. Base: 4322 rules (99 with conclusion selected). Queue: 219 rules.
+5000 rules inserted. Base: 4482 rules (107 with conclusion selected). Queue: 322 rules.
+5200 rules inserted. Base: 4619 rules (107 with conclusion selected). Queue: 307 rules.
+5400 rules inserted. Base: 4785 rules (107 with conclusion selected). Queue: 288 rules.
+5600 rules inserted. Base: 4883 rules (107 with conclusion selected). Queue: 369 rules.
+5800 rules inserted. Base: 5004 rules (107 with conclusion selected). Queue: 346 rules.
+6000 rules inserted. Base: 5126 rules (107 with conclusion selected). Queue: 276 rules.
+6200 rules inserted. Base: 5216 rules (107 with conclusion selected). Queue: 244 rules.
+6400 rules inserted. Base: 5308 rules (107 with conclusion selected). Queue: 242 rules.
+6600 rules inserted. Base: 5457 rules (107 with conclusion selected). Queue: 229 rules.
+6800 rules inserted. Base: 5615 rules (107 with conclusion selected). Queue: 213 rules.
+7000 rules inserted. Base: 5737 rules (107 with conclusion selected). Queue: 224 rules.
+7200 rules inserted. Base: 5820 rules (107 with conclusion selected). Queue: 253 rules.
+7400 rules inserted. Base: 5929 rules (107 with conclusion selected). Queue: 226 rules.
+7600 rules inserted. Base: 6022 rules (109 with conclusion selected). Queue: 237 rules.
+goal reachable: bad
+
+Derivation:
+Abbreviations:
+EAD = EAD_3[EAD_1 = choice[EAD_1_3,EAD_1_4],C_I = choice[C_I_3,C_I_4],suitesI = choice[suitesI_3,suitesI_4],!1 = @sid]
+X_1 = X_2[EAD_1 = choice[EAD_1_3,EAD_1_4],C_I = choice[C_I_3,C_I_4],suitesI = choice[suitesI_3,suitesI_4],!1 = @sid]
+@occ97_1 = @occ97[!1 = @sid]
+@occ80_1 = @occ80[!1 = @sid]
+EAD_1 = EAD_3_1[EAD_1_1 = choice[EAD_1_5,EAD_1_6],C_I_1 = choice[C_I_5,C_I_6],suitesI_1 = choice[suitesI_5,suitesI_6],!1 = @sid_1]
+X_3 = X[EAD_1_1 = choice[EAD_1_5,EAD_1_6],C_I_1 = choice[C_I_5,C_I_6],suitesI_1 = choice[suitesI_5,suitesI_6],!1 = @sid_1]
+@occ163_1 = @occ163[!1 = @sid_1]
+@occ146_1 = @occ146[!1 = @sid_1]
+
+1. Using the function plaintext_length the attacker may obtain plaintext_length (resp. plaintext_length).
+attacker2(plaintext_length,plaintext_length).
+
+2. The attacker has some term EAD_2_3 (resp. EAD_2_4).
+attacker2(EAD_2_3,EAD_2_4).
+
+3. The attacker has some term C_R_3 (resp. C_R_4).
+attacker2(C_R_3,C_R_4).
+
+4. By 3, the attacker may know C_R_3 (resp. C_R_4).
+By 2, the attacker may know EAD_2_3 (resp. EAD_2_4).
+Using the function 2-tuple the attacker may obtain (C_R_3,EAD_2_3) (resp. (C_R_4,EAD_2_4)).
+attacker2((C_R_3,EAD_2_3),(C_R_4,EAD_2_4)).
+
+5. The attacker has some term EAD_1_5 (resp. EAD_1_6).
+attacker2(EAD_1_5,EAD_1_6).
+
+6. The attacker has some term C_I_5 (resp. C_I_6).
+attacker2(C_I_5,C_I_6).
+
+7. By 6, the attacker may know C_I_5 (resp. C_I_6).
+Using the function wrap the attacker may obtain wrap(C_I_5) (resp. wrap(C_I_6)).
+attacker2(wrap(C_I_5),wrap(C_I_6)).
+
+8. By 7, the attacker may know wrap(C_I_5) (resp. wrap(C_I_6)).
+By 5, the attacker may know EAD_1_5 (resp. EAD_1_6).
+Using the function 2-tuple the attacker may obtain (wrap(C_I_5),EAD_1_5) (resp. (wrap(C_I_6),EAD_1_6)).
+attacker2((wrap(C_I_5),EAD_1_5),(wrap(C_I_6),EAD_1_6)).
+
+9. By 6, the attacker may know C_I_5 (resp. C_I_6).
+By 5, the attacker may know EAD_1_5 (resp. EAD_1_6).
+Using the function 2-tuple the attacker may obtain (C_I_5,EAD_1_5) (resp. (C_I_6,EAD_1_6)).
+attacker2((C_I_5,EAD_1_5),(C_I_6,EAD_1_6)).
+
+10. The attacker has some term suitesI_5 (resp. suitesI_6).
+attacker2(suitesI_5,suitesI_6).
+
+11. By 10, the attacker may know suitesI_5 (resp. suitesI_6).
+By 9, the attacker may know (C_I_5,EAD_1_5) (resp. (C_I_6,EAD_1_6)).
+Using the function 2-tuple the attacker may obtain (suitesI_5,(C_I_5,EAD_1_5)) (resp. (suitesI_6,(C_I_6,EAD_1_6))).
+attacker2((suitesI_5,(C_I_5,EAD_1_5)),(suitesI_6,(C_I_6,EAD_1_6))).
+
+12. The event @p_act(@occ146_1,(suitesI_5,(C_I_5,EAD_1_5))) (resp. event @p_act(@occ146_1,(suitesI_6,(C_I_6,EAD_1_6)))) records how variables are instantiated at {146}.
+The message (suitesI_5,(C_I_5,EAD_1_5)) (resp. (suitesI_6,(C_I_6,EAD_1_6))) that the attacker may have by 11 may be received at input {146}.
+The event eShare(X_3) (resp. eShare(X_3)) may be executed at {153}.
+So the message (method_four,(suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5)))) (resp. (method_four,(suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6))))) may be sent to the attacker at output {162}.
+attacker2((method_four,(suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5)))),(method_four,(suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6))))).
+
+13. By 12, the attacker may know (method_four,(suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5)))) (resp. (method_four,(suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6))))).
+Using the function 2-proj-2-tuple the attacker may obtain (suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5))) (resp. (suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6)))).
+attacker2((suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5))),(suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6)))).
+
+14. By 13, the attacker may know (suitesI_5,(exp(g,X_3),(C_I_5,EAD_1_5))) (resp. (suitesI_6,(exp(g,X_3),(C_I_6,EAD_1_6)))).
+Using the function 2-proj-2-tuple the attacker may obtain (exp(g,X_3),(C_I_5,EAD_1_5)) (resp. (exp(g,X_3),(C_I_6,EAD_1_6))).
+attacker2((exp(g,X_3),(C_I_5,EAD_1_5)),(exp(g,X_3),(C_I_6,EAD_1_6))).
+
+15. By 14, the attacker may know (exp(g,X_3),(C_I_5,EAD_1_5)) (resp. (exp(g,X_3),(C_I_6,EAD_1_6))).
+Using the function 1-proj-2-tuple the attacker may obtain exp(g,X_3) (resp. exp(g,X_3)).
+attacker2(exp(g,X_3),exp(g,X_3)).
+
+16. By 15, the attacker may know exp(g,X_3) (resp. exp(g,X_3)).
+Using the function wrap the attacker may obtain wrap(exp(g,X_3)) (resp. wrap(exp(g,X_3))).
+attacker2(wrap(exp(g,X_3)),wrap(exp(g,X_3))).
+
+17. By 16, the attacker may know wrap(exp(g,X_3)) (resp. wrap(exp(g,X_3))).
+By 8, the attacker may know (wrap(C_I_5),EAD_1_5) (resp. (wrap(C_I_6),EAD_1_6)).
+Using the function 2-tuple the attacker may obtain (wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)) (resp. (wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))).
+attacker2((wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))).
+
+18. By 10, the attacker may know suitesI_5 (resp. suitesI_6).
+Using the function wrap the attacker may obtain wrap(suitesI_5) (resp. wrap(suitesI_6)).
+attacker2(wrap(suitesI_5),wrap(suitesI_6)).
+
+19. By 18, the attacker may know wrap(suitesI_5) (resp. wrap(suitesI_6)).
+By 17, the attacker may know (wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)) (resp. (wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))).
+Using the function 2-tuple the attacker may obtain (wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))) (resp. (wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))).
+attacker2((wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))).
+
+20. Using the function method_four the attacker may obtain method_four (resp. method_four).
+attacker2(method_four,method_four).
+
+21. By 20, the attacker may know method_four (resp. method_four).
+Using the function wrap the attacker may obtain wrap(method_four) (resp. wrap(method_four)).
+attacker2(wrap(method_four),wrap(method_four)).
+
+22. By 21, the attacker may know wrap(method_four) (resp. wrap(method_four)).
+By 19, the attacker may know (wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))) (resp. (wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))).
+Using the function 2-tuple the attacker may obtain (wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))) (resp. (wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))).
+attacker2((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))),(wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))).
+
+23. By 22, the attacker may know (wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))) (resp. (wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))).
+Using the function hash the attacker may obtain hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))) (resp. hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))).
+attacker2(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))),hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))).
+
+24. By 23, the attacker may know hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))) (resp. hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))).
+Using the function wrap the attacker may obtain wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))) (resp. wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))).
+attacker2(wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))).
+
+25. Using the function g the attacker may obtain g (resp. g).
+attacker2(g,g).
+
+26. By 25, the attacker may know g (resp. g).
+Using the function wrap the attacker may obtain wrap(g) (resp. wrap(g)).
+attacker2(wrap(g),wrap(g)).
+
+27. By 26, the attacker may know wrap(g) (resp. wrap(g)).
+By 24, the attacker may know wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))) (resp. wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))).
+Using the function 2-tuple the attacker may obtain (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))) (resp. (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))).
+attacker2((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))),(wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))).
+
+28. By 27, the attacker may know (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))) (resp. (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))).
+Using the function hash the attacker may obtain hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))).
+attacker2(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))).
+
+29. By 28, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))).
+Using the function wrap the attacker may obtain wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))) (resp. wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))))).
+attacker2(wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))))).
+
+30. By 29, the attacker may know wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))) (resp. wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))))).
+By 4, the attacker may know (C_R_3,EAD_2_3) (resp. (C_R_4,EAD_2_4)).
+Using the function 2-tuple the attacker may obtain (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3)) (resp. (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))).
+attacker2((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3)),(wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))).
+
+31. By 30, the attacker may know (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3)) (resp. (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))).
+Using the function hash the attacker may obtain hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))) (resp. hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4)))).
+attacker2(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4)))).
+
+32. The attacker initially knows seleven[] (resp. seleven[]).
+attacker2(seleven[],seleven[]).
+
+33. By 28, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))).
+By 15, the attacker may know exp(g,X_3) (resp. exp(g,X_3)).
+Using the function hkdfextract the attacker may obtain hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3))).
+attacker2(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3))).
+
+34. By 33, the attacker may know hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3))).
+By 32, the attacker may know seleven[] (resp. seleven[]).
+By 31, the attacker may know hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))) (resp. hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4)))).
+By 1, the attacker may know plaintext_length (resp. plaintext_length).
+Using the function edhoc_kdf the attacker may obtain edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length)).
+attacker2(edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length)).
+
+35. The attacker initially knows stzero[] (resp. stzero[]).
+attacker2(stzero[],stzero[]).
+
+36. By 33, the attacker may know hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3))).
+By 35, the attacker may know stzero[] (resp. stzero[]).
+By 28, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))).
+By 1, the attacker may know plaintext_length (resp. plaintext_length).
+Using the function edhoc_kdf the attacker may obtain edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)).
+attacker2(edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)).
+
+37. By 4, the attacker may know (C_R_3,EAD_2_3) (resp. (C_R_4,EAD_2_4)).
+By 36, the attacker may know edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)).
+Using the function encxor the attacker may obtain encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length)) (resp. encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length))).
+attacker2(encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length)),encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length))).
+
+38. By 25, the attacker may know g (resp. g).
+By 37, the attacker may know encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length)) (resp. encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length))).
+Using the function 2-tuple the attacker may obtain (g,encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length))) (resp. (g,encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)))).
+attacker2((g,encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length))),(g,encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)))).
+
+39. The event @p_act(@occ146_1,(suitesI_5,(C_I_5,EAD_1_5))) (resp. event @p_act(@occ146_1,(suitesI_6,(C_I_6,EAD_1_6)))) records how variables are instantiated at {146}.
+The message (suitesI_5,(C_I_5,EAD_1_5)) (resp. (suitesI_6,(C_I_6,EAD_1_6))) that the attacker may have by 11 may be received at input {146}.
+The event eShare(X_3) (resp. eShare(X_3)) may be executed at {153}.
+The event @p_act(@occ163_1,(g,encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length)))) (resp. event @p_act(@occ163_1,(g,encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length))))) records how variables are instantiated at {163}.
+The message (g,encxor((C_R_3,EAD_2_3),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),plaintext_length))) (resp. (g,encxor((C_R_4,EAD_2_4),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),plaintext_length)))) that the attacker may have by 38 may be received at input {163}.
+So the message encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length)) (resp. encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length))) may be sent to the attacker at output {196}.
+attacker2(encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length)),encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length))).
+
+40. By 39, the attacker may know encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length)) (resp. encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length))).
+By 34, the attacker may know edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),plaintext_length)).
+Using the function decxor the attacker may obtain (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))) (resp. (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[])))))))).
+attacker2((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))),(make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[])))))))).
+
+41. By 40, the attacker may know (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_5),(wrap(exp(g,X_3)),(wrap(C_I_5),EAD_1_5))))))))),(C_R_3,EAD_2_3))),(id1_2[],idR_2[]))))))) (resp. (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD_1,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6)))))))),exp(g,X_3)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_6),(wrap(exp(g,X_3)),(wrap(C_I_6),EAD_1_6))))))))),(C_R_4,EAD_2_4))),(id1_2[],idR_2[])))))))).
+Using the function 1-proj-2-tuple the attacker may obtain make_id(id1_2[],idR_2[],psk_2[]) (resp. make_id(id1_2[],idR_2[],psk_2[])).
+attacker2(make_id(id1_2[],idR_2[],psk_2[]),make_id(id1_2[],idR_2[],psk_2[])).
+
+42. The attacker has some term EAD_2_5 (resp. EAD_2_6).
+attacker2(EAD_2_5,EAD_2_6).
+
+43. The attacker has some term C_R_5 (resp. C_R_6).
+attacker2(C_R_5,C_R_6).
+
+44. By 43, the attacker may know C_R_5 (resp. C_R_6).
+By 42, the attacker may know EAD_2_5 (resp. EAD_2_6).
+Using the function 2-tuple the attacker may obtain (C_R_5,EAD_2_5) (resp. (C_R_6,EAD_2_6)).
+attacker2((C_R_5,EAD_2_5),(C_R_6,EAD_2_6)).
+
+45. The attacker has some term EAD_1_3 (resp. EAD_1_4).
+attacker2(EAD_1_3,EAD_1_4).
+
+46. The attacker has some term C_I_3 (resp. C_I_4).
+attacker2(C_I_3,C_I_4).
+
+47. By 46, the attacker may know C_I_3 (resp. C_I_4).
+Using the function wrap the attacker may obtain wrap(C_I_3) (resp. wrap(C_I_4)).
+attacker2(wrap(C_I_3),wrap(C_I_4)).
+
+48. By 47, the attacker may know wrap(C_I_3) (resp. wrap(C_I_4)).
+By 45, the attacker may know EAD_1_3 (resp. EAD_1_4).
+Using the function 2-tuple the attacker may obtain (wrap(C_I_3),EAD_1_3) (resp. (wrap(C_I_4),EAD_1_4)).
+attacker2((wrap(C_I_3),EAD_1_3),(wrap(C_I_4),EAD_1_4)).
+
+49. By 46, the attacker may know C_I_3 (resp. C_I_4).
+By 45, the attacker may know EAD_1_3 (resp. EAD_1_4).
+Using the function 2-tuple the attacker may obtain (C_I_3,EAD_1_3) (resp. (C_I_4,EAD_1_4)).
+attacker2((C_I_3,EAD_1_3),(C_I_4,EAD_1_4)).
+
+50. The attacker has some term suitesI_3 (resp. suitesI_4).
+attacker2(suitesI_3,suitesI_4).
+
+51. By 50, the attacker may know suitesI_3 (resp. suitesI_4).
+By 49, the attacker may know (C_I_3,EAD_1_3) (resp. (C_I_4,EAD_1_4)).
+Using the function 2-tuple the attacker may obtain (suitesI_3,(C_I_3,EAD_1_3)) (resp. (suitesI_4,(C_I_4,EAD_1_4))).
+attacker2((suitesI_3,(C_I_3,EAD_1_3)),(suitesI_4,(C_I_4,EAD_1_4))).
+
+52. The event @p_act(@occ80_1,(suitesI_3,(C_I_3,EAD_1_3))) (resp. event @p_act(@occ80_1,(suitesI_4,(C_I_4,EAD_1_4)))) records how variables are instantiated at {80}.
+The message (suitesI_3,(C_I_3,EAD_1_3)) (resp. (suitesI_4,(C_I_4,EAD_1_4))) that the attacker may have by 51 may be received at input {80}.
+The event eShare(X_1) (resp. eShare(X_1)) may be executed at {87}.
+So the message (method_four,(suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3)))) (resp. (method_four,(suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4))))) may be sent to the attacker at output {96}.
+attacker2((method_four,(suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3)))),(method_four,(suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4))))).
+
+53. By 52, the attacker may know (method_four,(suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3)))) (resp. (method_four,(suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4))))).
+Using the function 2-proj-2-tuple the attacker may obtain (suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3))) (resp. (suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4)))).
+attacker2((suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3))),(suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4)))).
+
+54. By 53, the attacker may know (suitesI_3,(exp(g,X_1),(C_I_3,EAD_1_3))) (resp. (suitesI_4,(exp(g,X_1),(C_I_4,EAD_1_4)))).
+Using the function 2-proj-2-tuple the attacker may obtain (exp(g,X_1),(C_I_3,EAD_1_3)) (resp. (exp(g,X_1),(C_I_4,EAD_1_4))).
+attacker2((exp(g,X_1),(C_I_3,EAD_1_3)),(exp(g,X_1),(C_I_4,EAD_1_4))).
+
+55. By 54, the attacker may know (exp(g,X_1),(C_I_3,EAD_1_3)) (resp. (exp(g,X_1),(C_I_4,EAD_1_4))).
+Using the function 1-proj-2-tuple the attacker may obtain exp(g,X_1) (resp. exp(g,X_1)).
+attacker2(exp(g,X_1),exp(g,X_1)).
+
+56. By 55, the attacker may know exp(g,X_1) (resp. exp(g,X_1)).
+Using the function wrap the attacker may obtain wrap(exp(g,X_1)) (resp. wrap(exp(g,X_1))).
+attacker2(wrap(exp(g,X_1)),wrap(exp(g,X_1))).
+
+57. By 56, the attacker may know wrap(exp(g,X_1)) (resp. wrap(exp(g,X_1))).
+By 48, the attacker may know (wrap(C_I_3),EAD_1_3) (resp. (wrap(C_I_4),EAD_1_4)).
+Using the function 2-tuple the attacker may obtain (wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)) (resp. (wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))).
+attacker2((wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))).
+
+58. By 50, the attacker may know suitesI_3 (resp. suitesI_4).
+Using the function wrap the attacker may obtain wrap(suitesI_3) (resp. wrap(suitesI_4)).
+attacker2(wrap(suitesI_3),wrap(suitesI_4)).
+
+59. By 58, the attacker may know wrap(suitesI_3) (resp. wrap(suitesI_4)).
+By 57, the attacker may know (wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)) (resp. (wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))).
+Using the function 2-tuple the attacker may obtain (wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))) (resp. (wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))).
+attacker2((wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))).
+
+60. By 21, the attacker may know wrap(method_four) (resp. wrap(method_four)).
+By 59, the attacker may know (wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))) (resp. (wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))).
+Using the function 2-tuple the attacker may obtain (wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))) (resp. (wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))).
+attacker2((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))),(wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))).
+
+61. By 60, the attacker may know (wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))) (resp. (wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))).
+Using the function hash the attacker may obtain hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))) (resp. hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))).
+attacker2(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))),hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))).
+
+62. By 61, the attacker may know hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))) (resp. hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))).
+Using the function wrap the attacker may obtain wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))) (resp. wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))).
+attacker2(wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))).
+
+63. By 26, the attacker may know wrap(g) (resp. wrap(g)).
+By 62, the attacker may know wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))) (resp. wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))).
+Using the function 2-tuple the attacker may obtain (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))) (resp. (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))).
+attacker2((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))),(wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))).
+
+64. By 63, the attacker may know (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))) (resp. (wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))).
+Using the function hash the attacker may obtain hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))).
+attacker2(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))).
+
+65. By 64, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))).
+Using the function wrap the attacker may obtain wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))) (resp. wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))))).
+attacker2(wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))))).
+
+66. By 65, the attacker may know wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))) (resp. wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))))).
+By 44, the attacker may know (C_R_5,EAD_2_5) (resp. (C_R_6,EAD_2_6)).
+Using the function 2-tuple the attacker may obtain (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5)) (resp. (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))).
+attacker2((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5)),(wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))).
+
+67. By 66, the attacker may know (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5)) (resp. (wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))).
+Using the function hash the attacker may obtain hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))) (resp. hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6)))).
+attacker2(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6)))).
+
+68. By 64, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))).
+By 55, the attacker may know exp(g,X_1) (resp. exp(g,X_1)).
+Using the function hkdfextract the attacker may obtain hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1))).
+attacker2(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1))).
+
+69. By 68, the attacker may know hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1))).
+By 32, the attacker may know seleven[] (resp. seleven[]).
+By 67, the attacker may know hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))) (resp. hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6)))).
+By 1, the attacker may know plaintext_length (resp. plaintext_length).
+Using the function edhoc_kdf the attacker may obtain edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length)).
+attacker2(edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length)).
+
+70. By 68, the attacker may know hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)) (resp. hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1))).
+By 35, the attacker may know stzero[] (resp. stzero[]).
+By 64, the attacker may know hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))) (resp. hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))).
+By 1, the attacker may know plaintext_length (resp. plaintext_length).
+Using the function edhoc_kdf the attacker may obtain edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)).
+attacker2(edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)).
+
+71. By 44, the attacker may know (C_R_5,EAD_2_5) (resp. (C_R_6,EAD_2_6)).
+By 70, the attacker may know edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)).
+Using the function encxor the attacker may obtain encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length)) (resp. encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length))).
+attacker2(encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length)),encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length))).
+
+72. By 25, the attacker may know g (resp. g).
+By 71, the attacker may know encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length)) (resp. encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length))).
+Using the function 2-tuple the attacker may obtain (g,encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length))) (resp. (g,encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)))).
+attacker2((g,encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length))),(g,encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)))).
+
+73. The event @p_act(@occ80_1,(suitesI_3,(C_I_3,EAD_1_3))) (resp. event @p_act(@occ80_1,(suitesI_4,(C_I_4,EAD_1_4)))) records how variables are instantiated at {80}.
+The message (suitesI_3,(C_I_3,EAD_1_3)) (resp. (suitesI_4,(C_I_4,EAD_1_4))) that the attacker may have by 51 may be received at input {80}.
+The event eShare(X_1) (resp. eShare(X_1)) may be executed at {87}.
+The event @p_act(@occ97_1,(g,encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length)))) (resp. event @p_act(@occ97_1,(g,encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length))))) records how variables are instantiated at {97}.
+The message (g,encxor((C_R_5,EAD_2_5),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),plaintext_length))) (resp. (g,encxor((C_R_6,EAD_2_6),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),stzero[],hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),plaintext_length)))) that the attacker may have by 72 may be received at input {97}.
+So the message encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length)) (resp. encxor((make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length))) may be sent to the attacker at output {130}.
+attacker2(encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length)),encxor((make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length))).
+
+74. By 73, the attacker may know encxor((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length)) (resp. encxor((make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[]))))))),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length))).
+By 69, the attacker may know edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),plaintext_length) (resp. edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),seleven[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),plaintext_length)).
+Using the function decxor the attacker may obtain (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))) (resp. (make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[])))))))).
+attacker2((make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))),(make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[])))))))).
+
+75. By 74, the attacker may know (make_id(id1_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),iv_length),(sEncrypt0[],(sempty[],(make_id(id1_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_3),(wrap(exp(g,X_1)),(wrap(C_I_3),EAD_1_3))))))))),(C_R_5,EAD_2_5))),(id1_2[],idR_2[]))))))) (resp. (make_id(id2_2[],idR_2[],psk_2[]),aeadenc(EAD,edhoc_kdf(hkdfextract(psk_2[],edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sfive[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),hash_length)),stwelve[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),key_length),edhoc_kdf(hkdfextract(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4)))))))),exp(g,X_1)),sthirteen[],hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),iv_length),(sEncrypt0[],(sempty[],(make_id(id2_2[],idR_2[],psk_2[]),(hash((wrap(hash((wrap(g),wrap(hash((wrap(method_four),(wrap(suitesI_4),(wrap(exp(g,X_1)),(wrap(C_I_4),EAD_1_4))))))))),(C_R_6,EAD_2_6))),(id2_2[],idR_2[])))))))).
+Using the function 1-proj-2-tuple the attacker may obtain make_id(id1_2[],idR_2[],psk_2[]) (resp. make_id(id2_2[],idR_2[],psk_2[])).
+attacker2(make_id(id1_2[],idR_2[],psk_2[]),make_id(id2_2[],idR_2[],psk_2[])).
+
+76. By 75, the attacker may know make_id(id1_2[],idR_2[],psk_2[]) (resp. make_id(id2_2[],idR_2[],psk_2[])).
+By 41, the attacker may know make_id(id1_2[],idR_2[],psk_2[]) (resp. make_id(id1_2[],idR_2[],psk_2[])).
+We have make_id(id2_2[],idR_2[],psk_2[]) ≠ make_id(id1_2[],idR_2[],psk_2[]).
+The attacker tests equality between the two terms he knows, which may allow it to distinguish cases.
+bad.
+
+
+RESULT Observational equivalence cannot be proved.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query(ies):
+ - Observational equivalence cannot be proved.
+Associated axiom(s):
+ - Axiom event(eShare(k)) && attacker(k) ==> event(eLeakShare(k)) encoded as event2(eShare(k),eShare(k)) && attacker2(k,k) ==> event2(eLeakShare(k),eLeakShare(k)) in biprocess 1.
+
+--------------------------------------------------------------
+

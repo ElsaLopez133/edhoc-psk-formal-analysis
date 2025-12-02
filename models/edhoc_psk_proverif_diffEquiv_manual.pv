@@ -74,6 +74,7 @@ reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 
+
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
 let leakSKey(key_2:bitstring)=
@@ -246,7 +247,6 @@ set preciseActions=true.
 set simplifyProcess = true.
 set reconstructTrace = true.
 
-(* This never terminates, unless I remove passive attacker *)
 
 (* ===================================================== *)
 (*   Anonymity of the Initiator (PSK, unbounded peers)   *)
@@ -289,7 +289,7 @@ set reconstructTrace = true.
 (*   Anonymity of the Responder (PSK, unbounded peers)   *)
 (* ===================================================== *)
 
-process
+(* process
     !
     (
       new psk_2:bitstring;
@@ -319,13 +319,13 @@ process
         | 
         ( !R(cidR_2, idR_2, psk_2) )
       )
-    )
+    ) *)
 
 (* ===================================================== *)
 (*   Anonymity of the Initiator (PSK, 2 peers)           *)
 (* ===================================================== *)
 
-(* process
+process
 !
   (
     new psk_2:bitstring;
@@ -349,7 +349,7 @@ process
       |
       ( !I(cidI_2, method_four, idI_2, psk_2, idR_2) )
     )
-  ) *)
+  )
 
 
 (* ===================================================== *)
@@ -380,6 +380,3 @@ process
        !R(cidR, idR, psk)
   )
 ) *)
-
-
-
