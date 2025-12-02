@@ -12,26 +12,19 @@ lemmas = [
     "key_agreement_implicit",
     "key_agreement_explicit",
     "pfs",
-    "identity_no_misbinding",
-    "identity_binding_I",
-    "identity_binding_R",
-    # "no_passive_impersonation_I",
-    # "no_passive_impersonation_R",
     "secretR_psk",
     "secretI_psk",
     "secret_psk",
     "authRI_psk_non_inj",
     "authIR_psk_non_inj",
-    "authR_mutual_injective",
-    "authI_mutual_injective",
+    "full_agreement_RI",
+    "full_agreement_IR",
 ]
 
 flag_sets = [
     [],
     ["-DLeakShare"],
-    # ["-DLeakPSK"],
     ["-DLeakSessionKey"],
-    # ["-DLeakIdentityI", "-DLeakIdentityR"],
     ["-DLeakShare", "-DLeakSessionKey"],
 ]
 

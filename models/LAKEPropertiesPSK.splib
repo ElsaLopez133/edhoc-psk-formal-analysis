@@ -74,7 +74,7 @@ lemma secretI_psk:
     (Ex #t. LeakSessionKey(prk)@t)
     "
 
-// Mutual secrecy and mutual agreement
+// Mutual secrecy
 // In this case, the attacker needs to know one of the private DH values 
 // in order to derive the session key.
 // This is because we are now requiring that both peers derive the key
@@ -82,7 +82,7 @@ lemma secret_psk:
   "All cid1 cid2 m credI credR prk x gy y gx psk #i #j #k #p. // #l #c.
      AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i & 
      AcceptR(cid2, m, credI, credR, prk, gx, y, psk)@j &
-     K(prk)@k & Honest(psk)@p // &HonestSubject(credI)@l & HonestSubject(credR)@c 
+     K(prk)@k & Honest(psk)@p
    ==> 
    (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(x)@c)
    |
@@ -92,10 +92,11 @@ lemma secret_psk:
     "
 
 // ******************************************************************
-// ************** Authentication  ***********************************
+// ************** Full Agreement  ***********************************
 // ******************************************************************
 
 // PASSED
+// Authentication of the Initiator to the Responder
 // If a Responder accepted a session, i.e., it finished, then there must 
 // be a Initiator that derived the same values (same prk), 
 // unless PSK and subjects were leaked, in which case the attacker can forge
@@ -109,6 +110,7 @@ lemma authRI_psk_non_inj:
    (Ex #t. Compromise(psk)@t & t < i)
     "                
 // PASSED
+// Authentication of the Responder to the Initiator
 // If an Initiator accepted a session, i.e., it finished, then there must 
 // be a Responder that has already completed the protocol with the same prk, 
 // unless PSK and subjects were leaked, in which case the attacker can forge
@@ -132,7 +134,7 @@ lemma authIR_psk_non_inj:
 // have enageged in a session, unless the PSK or subjects were leaked
 // If this happens, then the attacker could play the role of I and there would not
 // be an Initiator running in the session.
-lemma authR_mutual_injective:
+lemma full_agreement_RI:
   "All cid1 cid2 m credI1 credI2 credR1 credR2 prk gx1 gx2 y1 y2 psk #i #j #k #l #c.
      AcceptR(cid1, m, credI1, credR1, prk, gx1, y1, psk)@i
      & AcceptR(cid2, m, credI2, credR2, prk, gx2, y2, psk)@j
@@ -145,7 +147,7 @@ lemma authR_mutual_injective:
     (Ex #t. Compromise(psk)@t & t < j)
     "     
 
-lemma authI_mutual_injective:
+lemma full_agreement_IR:
   "All cid1 cid2 m credI1 credI2 credR1 credR2 prk x1 x2 gy1 gy2 psk #i #j #k #l #c.
      AcceptI(cid1, m, credI1, credR1, prk, x1, gy1, psk)@i
      & AcceptI(cid2, m, credI2, credR2, prk, x2, gy2, psk)@j
@@ -210,7 +212,7 @@ lemma pfs:
      & Compromise(psk)@c  & i < c // long-term key is compromised after session
      & Honest(psk)@k
      &HonestSubject(credI)@p & HonestSubject(credR)@u
-     & K(prk)@l & i < l  & j < l          // attacker learns prk after session completed
+     & K(prk)@l
      ==>
      (Ex #t. LeakSessionKey(prk)@t & t < l)
      | 

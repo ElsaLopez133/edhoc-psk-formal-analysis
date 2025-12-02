@@ -74,29 +74,27 @@ reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 
-(* XOR-malleable stream cipher *)
-(* fun mkdelta_id(bitstring):bitstring.
-fun mkdelta_other(bitstring):bitstring.
-equation forall m:bitstring, k:bitstring, d1:bitstring;
-    xor(encxor(m, k), mkdelta_id(d1)) = encxor((mkdelta_id(d1), snd(m)), k).
-equation forall m:bitstring, k:bitstring, d2:bitstring;
-    xor(encxor(m, k), mkdelta_other(d2)) = encxor((fst(m), mkdelta_other(d2)), k). *)
 
-(* equation forall m:bitstring, k:bitstring, d:bitstring; xor(encxor(m, k), d) = encxor(xor(m, d), k). *)
-(* equation forall a:bitstring, b:bitstring, d1:bitstring, d2:bitstring; xor(pair(a,b), pair(d1,d2)) = pair(xor(a,d1), xor(b,d2)). *)
-(* equation forall x:bitstring; xor(x, zero()) = x. *)
-(* equation forall x:bitstring; xor(x, x) = zero(). *)
+(* let CompromiseShare(s_2:bitstring)=
+    event eLeakShare( s_2 );
+    event eLeakShare( exp(g, s_2) );
+    out(att,s_2). *)
 
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
+
 let leakSKey(key_2:bitstring)=
     event eLeakSessionKey( snull ).
+
+(* let leakSKey(key_2:bitstring)=
+    event eLeakSessionKey( key_2 );
+    out(att,key_2). *)
+
 let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
       psk_2:bitstring, cred_2:bitstring)=
-    in(att,(suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)));
-    (* new suitesI_2:bitstring; *)
-    (* new C_I_2:bitstring; *)
-    (* new EAD_1_2:bitstring; *)
+    new suitesI_2:bitstring;
+    new C_I_2:bitstring;
+    new EAD_1_2:bitstring;
 
     event eMethodOk( method_2 );
     let CRED_I_2:bitstring=credI_2 in
@@ -180,10 +178,9 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
                         ))
                | (leakSKey(PRK_out_2))))))).
 let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
-    in(att,(C_R_2:bitstring, (EAD_2_2:bitstring, suitesR_2:bitstring)));
-    (* new C_R_2:bitstring; *)
-    (* new EAD_2_2:bitstring; *)
-    (* new suitesR_2:bitstring; *)
+    new C_R_2:bitstring;
+    new EAD_2_2:bitstring;
+    new suitesR_2:bitstring;
 
     in(att,m1_2:bitstring);
     let (method_2:bitstring, (suitesI_2:bitstring, (G_X_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring))))=m1_2 in
@@ -263,17 +260,17 @@ let compromise(psk_2:bitstring)=
 
 
 set preciseActions=true.
-(* set attacker=passive. *)
+set attacker=passive.
 set simplifyProcess = false.
 set reconstructTrace = false.
 
 
 (* ===================================================== *)
-(*   Anonymity of the Initiator (PSK, 2 peers)           *)
+(*   Unlinkability of the Initiator (PSK, 2 peers)       *)
 (* ===================================================== *)
 
-process
-(* ! *)
+(* process
+!
   (
     new psk_2:bitstring;
     event eHonest( psk_2 );
@@ -298,14 +295,14 @@ process
       |
       ( !I( cid1_2, method_four, id1_2, psk_2, idR_2 ) )
     )
-  )
+  ) *)
 
 
 (* ===================================================== *)
-(*   Anonymity of the Responder (PSK, 2 peers)           *)
+(*   Unlinkability of the Responder (PSK, 2 peers)       *)
 (* ===================================================== *)
 
-(* process
+process
 !
 (
   new psk:bitstring; event eHonest(psk);
@@ -324,14 +321,18 @@ process
   out(att, (idR1, idR2));
 
   (
-       !I(cid1, method_four(), idI1, psk, idR) 
+       !I(cid1, method_four(), idI1, psk, idR1)
+       |
+       !I(cid1, method_four(), idI1, psk, idR2)
        |
        !R(cidR, idR, psk)
+       (* | *)
+       (* !R(cid1, idR1, psk) *)
   )
-) *)
+)
 
 (* ===================================================== *)
-(*   Anonymity of the Responder (PSK, unbounded peers)   *)
+(* Unlinkability of the Responder (PSK, unbounded peers) *)
 (* ===================================================== *)
 
 (* process
@@ -367,7 +368,7 @@ process
     ) *)
 
 (* ===================================================== *)
-(*   Anonymity of the Initiator (PSK, unbounded peers)   *)
+(* Unlinkability of the Initiator (PSK, unbounded peers  *)
 (* ===================================================== *)
 
 (* process

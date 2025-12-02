@@ -74,11 +74,21 @@ reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
 reduc forall x:bitstring;   check_grp(x) = const_grp.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 
+(* let CompromiseShare(s_2:bitstring)=
+    event eLeakShare( s_2 );
+    event eLeakShare( exp(g, s_2) );
+    out(att,s_2). *)
 
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
+
 let leakSKey(key_2:bitstring)=
     event eLeakSessionKey( snull ).
+
+(* let leakSKey(key_2:bitstring)=
+    event eLeakSessionKey( key_2 );
+    out(att,key_2). *)
+
 let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
       psk_2:bitstring, cred_2:bitstring)=
     in(att,(suitesI_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring)));
@@ -243,89 +253,15 @@ let compromise(psk_2:bitstring)=
 
 
 set preciseActions=true.
-(* set attacker=passive. *)
-set simplifyProcess = true.
-set reconstructTrace = true.
+set simplifyProcess = false.
+set reconstructTrace = false.
 
-
-(* ===================================================== *)
-(*   Anonymity of the Initiator (PSK, unbounded peers)   *)
-(* ===================================================== *)
-
-(* process
-    !
-    (
-      new psk_2:bitstring;
-      event eHonest( psk_2 );
-      
-      (* new cid1_2:bitstring; new cid2_2:bitstring; new cidR_2:bitstring; *)
-      new cid1_2:bitstring; new cid2_2:bitstring;
-      new id1_2:bitstring; new id2_2:bitstring;
-      new idR_2:bitstring;
-
-      event eHonestSubject( id1_2 );      
-      event eHonestSubject( id2_2 );
-
-      out(att, ( id1_2, id2_2 ));
-      (* out(att, ( idR_2 )); *)
-
-      let idI_2:bitstring=choice[id1_2, id2_2] in
-      let cidI_2:bitstring=choice[cid1_2, cid2_2] in
-
-      (
-        (  !in(att, cred:bitstring); I(cid1_2, method_four, id1_2, psk_2, cred ))
-        |
-        (  !in(att, cred:bitstring); I(cid2_2, method_four, id2_2, psk_2, cred ))
-        |
-        ( !R(cid1_2, id1_2, psk_2) )
-        |
-        ( !R(cid2_2, id2_2, psk_2) )
-        | 
-        ( !I(cidI_2, method_four, idI_2, psk_2, idR_2) )
-      )
-    ) *)
-
-(* ===================================================== *)
-(*   Anonymity of the Responder (PSK, unbounded peers)   *)
-(* ===================================================== *)
-
-(* process
-    !
-    (
-      new psk_2:bitstring;
-      event eHonest( psk_2 );
-      
-      new cid1_2:bitstring; new cid2_2:bitstring;
-      new id1_2:bitstring; new id2_2:bitstring;
-      new idR1_2:bitstring; new idR2_2:bitstring;
-
-      event eHonestSubject( id1_2 );      
-      event eHonestSubject( id2_2 );
-
-      out(att, ( id1_2, id2_2 ));
-      (* out(att, ( idR1_2, idR2_2 )); *)
-
-      let idR_2:bitstring=choice[idR1_2, idR2_2] in
-      let cidR_2:bitstring=choice[cid1_2, cid2_2] in
-
-      (
-        (  !in(att, cred:bitstring); I(cid1_2, method_four, id1_2, psk_2, cred ))
-        |
-        (  !in(att, cred:bitstring); I(cid2_2, method_four, id2_2, psk_2, cred ))
-        |
-        ( !R(cid1_2, idR1_2, psk_2) )
-        |
-        ( !R(cid2_2, idR2_2, psk_2) )
-        | 
-        ( !R(cidR_2, idR_2, psk_2) )
-      )
-    ) *)
 
 (* ===================================================== *)
 (*   Anonymity of the Initiator (PSK, 2 peers)           *)
 (* ===================================================== *)
 
-process
+(* process
 !
   (
     new psk_2:bitstring;
@@ -349,14 +285,14 @@ process
       |
       ( !I(cidI_2, method_four, idI_2, psk_2, idR_2) )
     )
-  )
+  ) *)
 
 
 (* ===================================================== *)
 (*   Anonymity of the Responder (PSK, 2 peers)           *)
 (* ===================================================== *)
 
-(* process
+process
 !
 (
   new psk:bitstring; event eHonest(psk);
@@ -379,4 +315,4 @@ process
        |
        !R(cidR, idR, psk)
   )
-) *)
+)
