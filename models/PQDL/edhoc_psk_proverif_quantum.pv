@@ -77,12 +77,12 @@ set preciseActions=true.
 (* Post‑quantum attacker can recover exponent from DH term *)
 reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
 
-(* YWe need two phases to model post quantum attacker capabilities
+(* We need two phases to model post quantum attacker capabilities
   - phase 0 = honest execution (attacker only eavesdrops, but cannot break DH yet)
   - phase 1 = post‑quantum era (attacker now can use DL destructor *)
 
 (*secretR_psk*)
-(* query cid:bitstring, credI:bitstring, credR:bitstring, gx:bitstring,
+query cid:bitstring, credI:bitstring, credR:bitstring, gx:bitstring,
       m:bitstring, prk:bitstring, psk:bitstring, y:bitstring, i:time, j:time,
       k:time, l:time, t:time;
  ((((event(eAcceptR( cid, m, credI, credR, prk, gx, y, psk ))@i) &&
@@ -91,9 +91,9 @@ reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
   (event(eHonestSubject( credI ))@l)) ==>
  (((event(eCompromise( psk ))@t) && (t < j)) ||
   (event(eLeakSessionKey( prk ))@t))
-. *)
+.
 (*secretI_psk*)
-(* query cid:bitstring, credI:bitstring, credR:bitstring, gy:bitstring,
+query cid:bitstring, credI:bitstring, credR:bitstring, gy:bitstring,
       m:bitstring, prk:bitstring, psk:bitstring, x:bitstring, i:time, j:time,
       k:time, l:time, t:time;
  ((((event(eAcceptI( cid, m, credI, credR, prk, x, gy, psk ))@i) &&
@@ -101,9 +101,9 @@ reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
    (event(eHonest( psk ))@k)) &&
   (event(eHonestSubject( credR ))@l)) ==>
  ((event(eCompromise( psk ))@t) || (event(eLeakSessionKey( prk ))@t))
-. *)
+.
 (*secret_psk*)
-(* query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
+query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
       gx:bitstring, gy:bitstring, m:bitstring, prk:bitstring, psk:bitstring,
       x:bitstring, y:bitstring, c:time, i:time, j:time, k:time, p:time, t:time;
  ((((event(eAcceptI( cid1, m, credI, credR, prk, x, gy, psk ))@i) &&
@@ -115,10 +115,10 @@ reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
    (((event(eCompromise( psk ))@t) && (t < k)) &&
     (event(eLeakShare( y ))@c))) ||
   (event(eLeakSessionKey( prk ))@t))
-. *)
+.
 
 (*full_agreement_RI*)
-(* query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
+query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
       credI1:bitstring, credI2:bitstring, credR:bitstring, credR1:bitstring,
       credR2:bitstring, gx1:bitstring, gx2:bitstring, gy:bitstring,
       m:bitstring, prk:bitstring, psk:bitstring, x:bitstring, y1:bitstring,
@@ -142,10 +142,10 @@ reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
     (credR = credR1)) &&
    (i = j)) ||
   ((event(eCompromise( psk ))@t) && (t < j)))
-. *)
+.
 
 (*full_agreement_IR*)
-(* query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
+query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
       credI1:bitstring, credI2:bitstring, credR:bitstring, credR1:bitstring,
       credR2:bitstring, gx:bitstring, gy1:bitstring, gy2:bitstring,
       m:bitstring, prk:bitstring, psk:bitstring, x1:bitstring, x2:bitstring,
@@ -169,34 +169,25 @@ reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
     (credR = credR1)) &&
    (i = j)) ||
   ((event(eCompromise( psk ))@t) && (t < j)))
-. *)
+.
 
 (*pfs*)
-(* query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
+query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
       gx:bitstring, gy:bitstring, m:bitstring, prk:bitstring, psk:bitstring,
       x:bitstring, y:bitstring, c:time, i:time, j:time, k:time, l:time, p:time,
       t:time, u:time;
  ((((((((((event(eAcceptI( cid1, m, credI, credR, prk, x, gy, psk ))@i) &&
           (event(eAcceptR( cid2, m, credI, credR, prk, gx, y, psk ))@j)) &&
-         (event(eCompromise( psk ))@c)) &&
-        (i < c)) &&
+         (event(eCompromise( psk ))@c))) &&
        (event(eHonest( psk ))@k)) &&
       (event(eHonestSubject( credI ))@p)) &&
      (event(eHonestSubject( credR ))@u)) &&
-    (attacker( prk )@l)) &&
-   (i < l)) &&
-  (j < l)) ==>
+    (attacker( prk )@l)))) ==>
  ((((event(eLeakSessionKey( prk ))@t) && (t < l)) ||
    ((event(eLeakShare( x ))@t) && (t < l))) ||
   ((event(eLeakShare( y ))@t) && (t < l)))
-. *)
+.
 
-(*AttackerGetsAnyDHShare*)
-(* query X:bitstring, i:time; event(eLeakShare( X ))@i . *)
-(*AttackerGetsSessionKey*)
-(* query key:bitstring, i:time; event(eLeakSessionKey( key ))@i . *)
-(*AttackerGetsPSK*)
-(* query psk:bitstring, i:time; event(eCompromise( psk ))@i . *)
 
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).

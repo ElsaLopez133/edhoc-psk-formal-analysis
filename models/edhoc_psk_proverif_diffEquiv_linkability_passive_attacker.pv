@@ -310,6 +310,7 @@ process
   new idR1:bitstring; event eHonest(idR1);
   new idR2:bitstring; event eHonest(idR2);
   new idI1:bitstring; event eHonest(idI1);
+  new idI2:bitstring; event eHonest(idI2);
 
   new cid1:bitstring;
   new cid2:bitstring;
@@ -317,18 +318,16 @@ process
   (* The challenge choice for responder identity *)
   let idR = choice[idR1, idR2] in
   let cidR:bitstring=choice[cid1, cid2] in
-  out(att,idI1);
+  out(att, (idI1, idI2));
   out(att, (idR1, idR2));
 
   (
-       !I(cid1, method_four(), idI1, psk, idR1)
+       !I(cid1, method_four(), idI1, psk, idR)
        |
-       !I(cid2, method_four(), idI1, psk, idR2)
+       !I(cid1, method_four(), idI1, psk, idR1)
        |
        !R(cidR, idR, psk)
        |
        !R(cid1, idR1, psk)
-       |
-       !R(cid2, idR2, psk)
   )
 )

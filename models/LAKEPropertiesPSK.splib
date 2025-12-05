@@ -3,8 +3,6 @@
 // ************** Reachability   ************************************
 // ******************************************************************
 
-// PASSED
-
 #ifdef SanityChecks
 
 /* there exists at least one initiator AcceptI */
@@ -24,8 +22,6 @@ lemma exists_acceptR[output=[proverif]]:
 // ******************************************************************
 // ************** Confidentiality  **********************************
 // ******************************************************************
-
-// PASSED 
 
 // This first two lemmas prove secrecy from the point of view of ONE of the peers
 // In this case, there is no need of leaking the DH shares, since the attacker 
@@ -51,7 +47,6 @@ lemma secretI_psk:
     (Ex #t. LeakSessionKey(prk)@t)
     "
 
-// Mutual secrecy
 // In this case, the attacker needs to know one of the private DH values 
 // in order to derive the session key.
 // This is because we are now requiring that both peers derive the key
@@ -72,7 +67,6 @@ lemma secret_psk:
 // ****Full Agreement: Authentication and key confirmation***********
 // ******************************************************************
 
-// PASSED
 // Authentication of the Initiator to the Responder
 // If a Responder accepted a session, i.e., it finished, then there must 
 // be a Initiator that derived the same values (same prk), 
@@ -120,7 +114,6 @@ lemma full_agreement_IR:
 // ********************** Perfect Forward Secrecy **************
 // *************************************************************
 
-// PASSED
 lemma pfs:
   "All cid1 cid2 m credI credR prk psk gy x gx y #i #j #c #k #l #p #u.
      AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i

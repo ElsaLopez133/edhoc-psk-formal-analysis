@@ -1,9 +1,9 @@
 #!/bin/bash
 # Usage: ./prove_edhoc.sh <input_file> <lemmas> <s>
-# Example: ./prove_edhoc.sh proverif edhoc_psk_proverif.spthy "exe*" 10 10 DFS s 0 4 false
+# Example: ./prove_edhoc.sh edhoc_psk_sapic.spthy "secret_psk" 10 10 DFS s 0 4 false
 
 INPUT=$1                                      # .spthy file
-LEMMAS=${2:-exe*}                             # e.g. exe*, secrecy*, agreement*
+LEMMAS=${2:-exe*}                             # e.g. exe*, pfs*, full_agreement_RI*
 S=${3:-10}                                    # step bound (e.g. 10)
 GLOBAL_BOUND=${4:-10}                         # Global autoprover bound
 STOP_ON_TRACE=${5:-DFS}                       # DFS, BFS, SEQDFS, NONE
@@ -38,6 +38,4 @@ tamarin-prover --prove="$LEMMAS" \
     --derivcheck-timeout="$DERIVCHECK_TIMEOUT" \
     $VERBOSE_OPT \
     +RTS -N"$THREADS" -RTS \
-    -DLeakShare -DLeakPSK -DLeakSessionKey
-
-# tamarin-prover --prove=pfs*  edhoc_psk_sapic.spthy --derivcheck-timeout=0 -DLeakShare -DLeakPSK -DLeakSessionKey
+    -DLeakShare -DLeakSKey

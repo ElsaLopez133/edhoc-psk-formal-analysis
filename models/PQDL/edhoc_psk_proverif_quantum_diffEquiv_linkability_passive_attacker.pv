@@ -77,11 +77,6 @@ axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 (* Post‑quantum attacker can recover exponent from DH term *)
 reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
 
-(* let CompromiseShare(s_2:bitstring)=
-    event eLeakShare( s_2 );
-    event eLeakShare( exp(g, s_2) );
-    out(att,s_2). *)
-
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
 
@@ -271,7 +266,7 @@ set reconstructTrace = false.
 (*     linkability of the Initiator (PSK, 2 peers)       *)
 (* ===================================================== *)
 
-process
+(* process
 !
   (
     new psk_2:bitstring;
@@ -299,14 +294,14 @@ process
       |
       phase 1; in(att, G:bitstring); out(att, DL(G,g)) 
     )
-  )
+  ) *)
 
 
 (* ===================================================== *)
 (*     linkability of the Responder (PSK, 2 peers)       *)
 (* ===================================================== *)
 
-(* process
+process
 !
 (
   new psk:bitstring; event eHonest(psk);
@@ -335,4 +330,4 @@ process
        |
        phase 1; in(att, G:bitstring); out(att, DL(G,g)) 
   )
-) *)
+)

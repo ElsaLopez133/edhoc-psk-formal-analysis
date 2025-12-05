@@ -175,7 +175,6 @@ let R(~cid, ~idR, ~psk) =
       let <ID_CRED_PSK_in, ciphertext_3b> = plaintext_3a in
 
       let CRED_I = get_cred(ID_CRED_PSK_in, ~psk, CRED_R) in
-      // let PSK_in = get_psk(ID_CRED_PSK_in) in
       
       if CRED_I = CRED_R then (
         0
@@ -183,34 +182,32 @@ let R(~cid, ~idR, ~psk) =
 
       event ReceivedRm3(~cid, method, CRED_I, CRED_R, ~psk, ~Y, G_X, m3);
       (
-        // if PSK_in = ~psk then (
-          let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five', TH_3, hash_length) in
-          let PRK_4e3m = hkdfextract(~psk, SALT_4e3m) in
-          let K_3 = edhoc_kdf(PRK_4e3m,'twelve', TH_3, key_length) in
-          let IV_3 = edhoc_kdf(PRK_3e2m,'thirteen', TH_3, iv_length) in
+        let SALT_4e3m = edhoc_kdf(PRK_3e2m,'five', TH_3, hash_length) in
+        let PRK_4e3m = hkdfextract(~psk, SALT_4e3m) in
+        let K_3 = edhoc_kdf(PRK_4e3m,'twelve', TH_3, key_length) in
+        let IV_3 = edhoc_kdf(PRK_3e2m,'thirteen', TH_3, iv_length) in
 
-          let external_aad_3 = <ID_CRED_PSK_in, TH_3, CRED_I, CRED_R> in
-          let ad_3 = <'Encrypt0','empty',external_aad_3> in
-          let plaintext_3b = aeaddec(ciphertext_3b, K_3, IV_3, ad_3) in
-          let <EAD_3> = plaintext_3b in
-          let TH_4 = hash(<wrap(TH_3), ID_CRED_PSK_in, plaintext_3b, CRED_I, CRED_R>) in
-          let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
-          let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
-          let PRK_out = edhoc_kdf(PRK_4e3m,'seven', TH_4, hash_length) in
-          let external_aad_4 = <TH_4> in
-          let ad_4 = <'Encrypt0','empty',external_aad_4> in
-          let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
-          event DerivedR(~cid,PRK_out,~Y,G_X, ~psk);
-          event TransmitEAD(m4, ~EAD_4, PRK_out);
-          event AcceptR(~cid, method, CRED_I, CRED_R, PRK_out, G_X, ~Y, ~psk);
-          event AcceptRData(PRK_out, method, CRED_I, CRED_R, ~psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
-          out(m4);
-          (
-              0 
-              |
-              leakSKey(PRK_out)
-          )
-        // ) else (0)
+        let external_aad_3 = <ID_CRED_PSK_in, TH_3, CRED_I, CRED_R> in
+        let ad_3 = <'Encrypt0','empty',external_aad_3> in
+        let plaintext_3b = aeaddec(ciphertext_3b, K_3, IV_3, ad_3) in
+        let <EAD_3> = plaintext_3b in
+        let TH_4 = hash(<wrap(TH_3), ID_CRED_PSK_in, plaintext_3b, CRED_I, CRED_R>) in
+        let K_4 = edhoc_kdf(PRK_4e3m,'eight', TH_4, key_length) in
+        let IV_4 = edhoc_kdf(PRK_3e2m,'nine', TH_4, iv_length) in
+        let PRK_out = edhoc_kdf(PRK_4e3m,'seven', TH_4, hash_length) in
+        let external_aad_4 = <TH_4> in
+        let ad_4 = <'Encrypt0','empty',external_aad_4> in
+        let m4 = aeadenc(~EAD_4, K_4, IV_4, ad_4) in
+        event DerivedR(~cid,PRK_out,~Y,G_X, ~psk);
+        event TransmitEAD(m4, ~EAD_4, PRK_out);
+        event AcceptR(~cid, method, CRED_I, CRED_R, PRK_out, G_X, ~Y, ~psk);
+        event AcceptRData(PRK_out, method, CRED_I, CRED_R, ~psk,~Y,G_X,<TH_2,TH_3,TH_4,suitesI, EAD_1, EAD_2, EAD_3, m1, plaintext_2, plaintext_3a>);
+        out(m4);
+        (
+            0 
+            |
+            leakSKey(PRK_out)
+        )
     ) else (0)
     )
   )
@@ -240,8 +237,6 @@ process:
 
 
 #include "LAKEPropertiesPSK.splib"
-
-// === Anonymity of I and R agains active attackers ===
 
 #ifdef diffEquivAnonymityInitiator
 
@@ -355,8 +350,6 @@ diffEquivLemma:
       (!R(~cidR, ~idR, ~psk))
       |
       (!I(cid1, method_four(), idI1, ~psk, ~idR))
-      |
-      (!R(~cid1, ~idR1, ~psk))
       |
       (!I(cid1, method_four(), idI1, ~psk, ~idR1))
     )

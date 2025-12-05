@@ -7,10 +7,6 @@ from datetime import datetime
 
 # ---- Configuration ----
 lemmas = [
-    # "data_authentication_I_to_R",
-    # "data_authentication_R_to_I",
-    "key_agreement_implicit",
-    "key_agreement_explicit",
     "pfs",
     "secretR_psk",
     "secretI_psk",
@@ -24,8 +20,8 @@ lemmas = [
 flag_sets = [
     [],
     ["-DLeakShare"],
-    ["-DLeakSessionKey"],
-    ["-DLeakShare", "-DLeakSessionKey"],
+    ["-DLeakSKey"],
+    ["-DLeakShare", "-DLeakSKey"],
 ]
 
 tamarin_file = "edhoc_psk_sapic.spthy"

@@ -28,22 +28,6 @@ functions: DL/2 [destructor, private]
 reduc forall a:bitstring; DL(exp(g,a), g) = a.
 #else
 functions: DL/2 [destructor]
-equations: DL(x,y) = x    (* harmless default, attacker learns nothing *)
-#endif
-
-
-// Not used for the moment
-
-// #ifdef CollapseHash
-// functions: hout/0
-// equations: hash(x)=hout
-// #endif
-
-#ifdef NeutralCheck
-functions: check_grp/1 [destructor]
-equations: check_grp(x) = x
-#else
-functions: check_grp/1 [destructor], const_grp/0
-equations: check_grp(x) = const_grp
+equations: DL(x,y) = x 
 #endif
 
