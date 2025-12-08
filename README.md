@@ -1,6 +1,6 @@
 # EDHOC-PSK Formal Analysis
 
-This repository contains formal models and analysis results for the EDHOC protocol using Pre-Shared Key (PSK) authentication.
+This repository contains formal analysis models for the EDHOC protocol using Pre-Shared Key (PSK) authentication.
 
 ## 📌 Goals
 

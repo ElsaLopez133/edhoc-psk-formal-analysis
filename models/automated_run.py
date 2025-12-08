@@ -22,6 +22,7 @@ flag_sets = [
     ["-DLeakShare"],
     ["-DLeakSKey"],
     ["-DLeakShare", "-DLeakSKey"],
+    ["-DPQDL"],
 ]
 
 tamarin_file = "edhoc_psk_sapic.spthy"
