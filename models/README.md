@@ -1,45 +1,57 @@
-## 📁 Files
+## 📁 Structure of this directory
 
-| File | Purpose |
-|------|---------|
-| `edhoc_psk_sapic.spthy` | Main SAPIC+ theory modeling EDHOC with PSK |
-| `edhoc_psk_proverif.pv` | ProVerif translation of the SAPIC+ model |
-| `edhoc_psk_proverif_X.pv` | ProVerif variants with additional attacker capabilities |
-| `LAKEPropertiesPSK.splib` | Lemmas for SAPIC+ model |
-| `Headers.splib` | Definition of optional attacker capabilities |
-| `automated_run.py` | Script to batch-run lemmas and collect statistics |
+models/
+│
+├── edhoc_psk_sapic.spthy           # Main SAPIC+ specification
+├── LAKEPropertiesPSK.splib         # Lemmas for SAPIC+
+├── Headers.splib                   # Optional attacker-capability flags
+│
+├── proverif/                       # ProVerif translations and equivalence models
+│     ├── edhoc_psk_proverif.pv
+│     ├── edhoc_psk_proverif_X.pv
+│     ├── edhoc_psk_proverif_diffEquiv_anonymity_active_attacker.pv
+│     └── edhoc_psk_proverif_diffEquiv_linkability_passive_attacker.pv
+│     └── quantum/                  # Save-Now-Decrypt-Later (post-quantum) models
+│         ├── edhoc_psk_proverif_quantum.pv
+│         ├── edhoc_psk_proverif_diffEquiv_quantum_anonymity_active_attacker.pv
+│         └── edhoc_psk_proverif_diffEquiv_quantum_linkability_passive_attacker.pv
+│
+└── scripts/
+      └── automated_run.py          # Batch script for Tamarin
 
----
 
 ## 🚀 Running the model using SAPIC+
 
-The file edhoc_psk_sapic.spthy is written in the SAPIC+ syntax, meaning that the process is modeled using the applied pi-calculus (same as ProVerif) whereas lemmas are written using first-order logic (same as Tamarin).
-
-This file can either be run in Tamarin or Proverif.
+The main specification is 
+```bash
+edhoc_psk_sapic.spthy
+```
+It uses applied pi-calculus for the protocol and first-order logic for lemmas.
 
 ### Running the Tamarin Model
 
-#### Prove all lemmas (non-interactively)
+#### ▶️ Prove all lemmas (non-interactively)
 
 ```bash
 tamarin-prover --prove edhoc_psk_sapic.spthy
 ```
 
-#### Prove a specific lemma
+#### ▶️ Prove a specific lemma
 
 ```bash
 tamarin-prover --prove=secret_psk edhoc_psk_sapic.spthy
 ```
 
-You can change secret_psk to any lemma defined in the LAKEPropertiesPSK.splib.
+Any lemma listed in LAKEPropertiesPSK.splib can be used here.
 
-#### Adding attacker capabilities
+#### ⚙️ Adding attacker capabilities
 
-We define three flags that model attacker capabilities.
-They can be found in the file Headers.splib:
-- LeakShare: models leakage of DH secrets
-- LeakSKey: models leakage of the session key
-- PQDL: activates the post-quantum discrete logarithm oracle (used in Save Now Decrypt Later analysis)
+Defined in Headers.splib:
+| Flag        | Meaning                                                   |
+| ----------- | --------------------------------------------------------- |
+| `LeakShare` | Ephemeral DH secret leakage                               |
+| `LeakSKey`  | Leakage of the final session key                          |
+| `PQDL`      | Post-quantum discrete-log oracle (Save-Now Decrypt-Later) |
 
 To activate any capability:
 ```bash
@@ -49,7 +61,6 @@ tamarin-prover --prove=<lemma> -D<attacker-capability> edhoc_psk_sapic.spthy
 #### Interactive Mode (Optional)
 
 Note: Only works with a GUI. If on a headless server (e.g., SSH), use automatic mode instead.
-
 To explore traces interactively:
 
 ```bash
@@ -113,7 +124,7 @@ To generate the equivalence model:
  tamarin-prover -m=proverifequiv -D=diffEquivAnonymityInitiator edhoc_psk_sapic.spthy > edhoc_psk_proverif_diffEquiv_anonymity_initiator.pv
 ```
 
-The flag (-D=diffEquivAnonymityInitiator) can be modified depending on whether we want to prove anonymity ( of either I or R) or linkability (of either I or R).
+The flag can be modified depending on whether we want to prove anonymity (of either I or R) or linkability (of either I or R).
 The options are:
 - diffEquivAnonymityInitiator
 - diffEquivAnonymityResponder
@@ -130,7 +141,7 @@ We provide two ready-to-run files:
 
 #### Post-Quantum Resistance in ProVerif
 
-To analyze EDHOC-PSK under ''Save-Now, Decrypt-Later'' (SNDL) attacks, we provide a separate folder containing ProVerif models where the attacker is equipped with a post-quantum ability: a Discrete Logarithm oracle that can recover Diffie–Hellman exponents from recorded values.
+To analyze EDHOC-PSK under ''Save-Now, Decrypt-Later'' (SNDL) attacks, we provide a separate folder (proverif/quantum) containing ProVerif models where the attacker is equipped with a post-quantum ability: a Discrete Logarithm oracle that can recover Diffie–Hellman exponents from recorded values.
 
 This oracle is added through the private equation:
 ```bash
