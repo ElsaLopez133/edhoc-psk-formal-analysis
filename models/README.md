@@ -1,5 +1,6 @@
 ## 📁 Structure of this directory
 
+```text
 models/
 │
 ├── edhoc_psk_sapic.spthy           # Main SAPIC+ specification
@@ -18,7 +19,7 @@ models/
 │
 └── scripts/
       └── automated_run.py          # Batch script for Tamarin
-
+```
 
 ## 🚀 Running the model using SAPIC+
 
