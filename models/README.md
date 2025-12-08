@@ -130,7 +130,7 @@ We provide two ready-to-run files:
 
 #### Post-Quantum Resistance in ProVerif
 
-To analyze EDHOC-PSK under ``Save-Now, Decrypt-Later'' (SNDL) attacks, we provide a separate folder containing ProVerif models where the attacker is equipped with a post-quantum ability: a Discrete Logarithm oracle that can recover Diffie–Hellman exponents from recorded values.
+To analyze EDHOC-PSK under ''Save-Now, Decrypt-Later'' (SNDL) attacks, we provide a separate folder containing ProVerif models where the attacker is equipped with a post-quantum ability: a Discrete Logarithm oracle that can recover Diffie–Hellman exponents from recorded values.
 
 This oracle is added through the private equation:
 ```bash
