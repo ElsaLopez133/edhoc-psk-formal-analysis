@@ -8,8 +8,8 @@ models/
 ├── Headers.splib                   # Optional attacker-capability flags
 │
 ├── proverif/                       # ProVerif translations and equivalence models
-│     ├── edhoc_psk_proverif.pv
-│     ├── edhoc_psk_proverif_X.pv
+│     ├── edhoc_psk_proverif.pv     
+│     ├── edhoc_psk_proverif_X.pv   # ProVerif translation with additional attacker capability (X)
 │     ├── edhoc_psk_proverif_diffEquiv_anonymity_active_attacker.pv
 │     └── edhoc_psk_proverif_diffEquiv_linkability_passive_attacker.pv
 │     └── quantum/                  # Save-Now-Decrypt-Later (post-quantum) models
@@ -116,7 +116,7 @@ To output the elapsed time, do
 
 #### Identity Protection in ProVerif
 
-We use diff-equivalence to prove anonymity and (weak) linkability.
+We use diff-equivalence to prove anonymity and unlinkability.
 Intuitively, two process are equivalent if they cannot be distinguished by the attacker.
 
 To generate the equivalence model:
@@ -136,7 +136,7 @@ We provide two ready-to-run files:
 
 | File | Purpose |
 |------|---------|
-| `edhoc_psk_proverif_diffEquiv_linkability_passive_attacker.pv` | Linkability under a passive attacker, for both Initiator and Responder |
+| `edhoc_psk_proverif_diffEquiv_linkability_passive_attacker.pv` | Unlinkability under a passive attacker, for both Initiator and Responder |
 | `edhoc_psk_proverif_diffEquiv_anonymity_active_attacker.pv` | Anonymity under a active attacker, for both Initiator and Responder |
 ---
 
@@ -153,7 +153,7 @@ and is activated in a dedicated protocol phase. This reflects a realistic quantu
 There are three files in the given folder
 | File | Purpose |
 |------|---------|
-| `edhoc_psk_proverif_diffEquiv_quantum_linkability_passive_attacker.pv` | Linkability in the SNDL model |
+| `edhoc_psk_proverif_diffEquiv_quantum_linkability_passive_attacker.pv` | Unlinkability in the SNDL model |
 | `edhoc_psk_proverif_diffEquiv_quantum_anonymity_active_attacker.pv` | Anonymity in the SNDL |
 | `edhoc_psk_proverif_quantum.pv` | Confidentiality, authentication and key confirmation in the SNDL |
 ---

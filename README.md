@@ -8,7 +8,7 @@ The models support different attacker capabilities, including Save-Now-Decrypt-L
 The model enables the verification of:
 
 - Authentication and secrecy properties
-- Anonymity and (weak) unlinkability
+- Anonymity and unlinkability
 - Post-quantum resilience of PSK-based EDHOC
 
 ## Requirements
