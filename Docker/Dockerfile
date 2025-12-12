@@ -1,9 +1,8 @@
 FROM debian:12-slim
-# FROM protocolplatform/protocolplatform
 
 LABEL version="1.0" \
       description="EDHOC-PSK analysis container with ProVerif + Tamarin" \
-      org.opencontainers.image.authors="Elsa Lopez Perez"
+      org.opencontainers.image.authors="Anonymous"
 
 # ------------------------------------------------------
 # Install system dependencies
