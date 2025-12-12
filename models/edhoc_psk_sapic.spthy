@@ -1,7 +1,6 @@
 /*
  * Protocol:   EDHOC-PSK
  * Source:     draft-ietf-lake-edhoc-psk
- * Model:      Fixed for concurrent sessions
 
  Scenarios to check ideally:
  - `tamarin-prover -D=LeakShare`
