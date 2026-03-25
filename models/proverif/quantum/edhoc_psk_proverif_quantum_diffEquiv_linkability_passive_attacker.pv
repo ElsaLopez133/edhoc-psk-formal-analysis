@@ -101,9 +101,9 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
     new EAD_3_2:bitstring;
     event eShare( X_2 );
     event eLeakEAD( EAD_3_2 );
-    let (=CRED_I_2)=CRED_R_2 in 
+    let (=CRED_I_2)=CRED_R_2 in
         (0)
-    else(((CompromiseShare(X_2))
+    else(((CompromiseShare(X_2) | (phase 1; out(att, exp(g, X_2))))
         | (event eInitiateWithID( CRED_I_2, CRED_R_2 );
            event eStartI( cid_2, method_2, CRED_I_2, CRED_R_2, psk_2 );
            let G_X_2:bitstring=exp(g, X_2) in
@@ -122,7 +122,7 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
                                                   plaintext_length) in
            let plaintext_2_2:bitstring=decxor(CIPHERTEXT_2_2, KEYSTREAM_2A_2) in
            let (C_R_2:bitstring, EAD_2_2:bitstring)=plaintext_2_2 in
-           let (=method_2)=method_four in 
+           let (=method_2)=method_four in
                (let PRK_3e2m_2:bitstring=PRK_2e_2 in
                 event eDerivedIShared( G_YX_2 );
                 let TH_3_2:bitstring=hash((wrap(TH_2_2), plaintext_2_2)) in
@@ -187,7 +187,7 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
     new EAD_4_2:bitstring;
     event eShare( Y_2 );
     event eLeakEAD( EAD_4_2 );
-    ((CompromiseShare(Y_2))
+    ((CompromiseShare(Y_2) | (phase 1; out(att, exp(g, Y_2))))
    | (event eRespondWithID( CRED_R_2 );
       event eStartR( cid_2, method_2, CRED_R_2, psk_2 );
       let G_Y_2:bitstring=exp(g, Y_2) in
@@ -195,7 +195,7 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
       let TH_1_2:bitstring=hash((wrap(method_2), (wrap(suitesI_2), (wrap(G_X_2), (wrap(C_I_2), EAD_1_2))))) in
       let TH_2_2:bitstring=hash((wrap(G_Y_2), wrap(TH_1_2))) in
       let PRK_2e_2:bitstring=hkdfextract(TH_2_2, G_XY_2) in
-      let (=method_2)=method_four in 
+      let (=method_2)=method_four in
           (let plaintext_2_2:bitstring=(C_R_2, EAD_2_2) in
            let KEYSTREAM_2A_2:bitstring=edhoc_kdf(PRK_2e_2, stzero, TH_2_2,
                                                   plaintext_length) in
@@ -212,7 +212,7 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
            let plaintext_3a_2:bitstring=decxor(m3_2, KEYSTREAM_3_2) in
            let (ID_CRED_PSK_in_2:bitstring, ciphertext_3b_2:bitstring)=plaintext_3a_2 in
            let CRED_I_2:bitstring=get_cred(ID_CRED_PSK_in_2, psk_2, CRED_R_2) in
-           let (=CRED_I_2)=CRED_R_2 in 
+           let (=CRED_I_2)=CRED_R_2 in
                (0)
            else(event eReceivedRm3( cid_2, method_2, CRED_I_2, CRED_R_2, psk_2, Y_2,
                                     G_X_2, m3_2
@@ -256,7 +256,7 @@ let compromise(psk_2:bitstring)=
 
 
 
-set preciseActions=true.
+(* set preciseActions=true. *)
 set attacker=passive.
 set simplifyProcess = false.
 set reconstructTrace = false.
@@ -266,16 +266,16 @@ set reconstructTrace = false.
 (*     linkability of the Initiator (PSK, 2 peers)       *)
 (* ===================================================== *)
 
-(* process
+process
 !
   (
     new psk_2:bitstring;
     event eHonest( psk_2 );
-    
+
     new cid1_2:bitstring; new cid2_2:bitstring; new cidR_2:bitstring;
     new id1_2:bitstring; new id2_2:bitstring; new idR_2:bitstring;
 
-    event eHonestSubject( id1_2 );      
+    event eHonestSubject( id1_2 );
     event eHonestSubject( id2_2 );
     event eHonestSubject( idR_2 );
 
@@ -292,15 +292,15 @@ set reconstructTrace = false.
       |
       ( !I( cid1_2, method_four, id1_2, psk_2, idR_2 ) )
       |
-      phase 1; in(att, G:bitstring); out(att, DL(G,g)) 
+      phase 1; in(att, G:bitstring); out(att, DL(G,g))
     )
-  ) *)
+  )
 
 
 (* ===================================================== *)
 (*     linkability of the Responder (PSK, 2 peers)       *)
 (* ===================================================== *)
-
+(*
 process
 !
 (
@@ -312,8 +312,9 @@ process
 
   new cid1:bitstring;
   new cid2:bitstring;
-
+*)
   (* The challenge choice for responder identity *)
+(*
   let idR = choice[idR1, idR2] in
   let cidR:bitstring=choice[cid1, cid2] in
   out(att,idI1);
@@ -324,10 +325,10 @@ process
        |
        !I(cid1, method_four(), idI1, psk, idR2)
        |
-       !R(cidR, idR, psk)
+       !R(cidR, idR, psk)*)
        (* | *)
        (* !R(cid1, idR1, psk) *)
-       |
-       phase 1; in(att, G:bitstring); out(att, DL(G,g)) 
+(*       |
+       phase 1; in(att, G:bitstring); out(att, DL(G,g))
   )
-)
+) *)

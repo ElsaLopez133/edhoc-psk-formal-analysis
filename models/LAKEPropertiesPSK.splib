@@ -51,14 +51,14 @@ lemma secretI_psk:
 // in order to derive the session key.
 // This is because we are now requiring that both peers derive the key
 lemma secret_psk:
-  "All cid1 cid2 m credI credR prk x gy y gx psk #i #j #k #p. // #l #c.
-     AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i & 
+  "All cid1 cid2 m credI credR prk x gy y gx psk #i #j #k #p.
+     AcceptI(cid1, m, credI, credR, prk, x, gy, psk)@i & i < j &
      AcceptR(cid2, m, credI, credR, prk, gx, y, psk)@j &
      K(prk)@k & Honest(psk)@p
    ==> 
-   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(x)@c)
+   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(x)@c & c < k)
    |
-   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(y)@c)
+   (Ex #t #c. Compromise(psk)@t & t < k & LeakShare(y)@c & c < k)
     | 
    (Ex #t. LeakSessionKey(prk)@t)
     "
