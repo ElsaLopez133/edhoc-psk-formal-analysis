@@ -121,7 +121,8 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
            let KEYSTREAM_2A_2:bitstring=edhoc_kdf(PRK_2e_2, stzero, TH_2_2,
                                                   plaintext_length) in
            let plaintext_2_2:bitstring=decxor(CIPHERTEXT_2_2, KEYSTREAM_2A_2) in
-           let (C_R_2:bitstring, (ID_CRED_HINT_2:bitstring, EAD_2_2:bitstring))=plaintext_2_2 in
+           let (C_R_2:bitstring, EAD_2_2:bitstring)=plaintext_2_2 in
+           let ID_CRED_HINT_2:bitstring=EAD_2_2 in
            let ID_CRED_PSK_2:bitstring=make_id(CRED_I_2, ID_CRED_HINT_2, CRED_R_2,
                                                psk_2) in
            let (=method_2)=method_four in 
@@ -178,7 +179,7 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
                | (leakSKey(PRK_out_2))))))).
 let R(cid_2:bitstring, credR_2:bitstring, psk_2:bitstring,
       hint_2:bitstring)=
-    in(att,(C_R_2:bitstring, (EAD_2_2:bitstring, suitesR_2:bitstring)));
+    in(att,(C_R_2:bitstring, (EAD_2_3:bitstring, suitesR_2:bitstring)));
     in(att,m1_2:bitstring);
     let (method_2:bitstring, (suitesI_2:bitstring, (G_X_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring))))=m1_2 in
     event eMethodOk( method_2 );
@@ -197,7 +198,8 @@ let R(cid_2:bitstring, credR_2:bitstring, psk_2:bitstring,
       let TH_2_2:bitstring=hash((wrap(G_Y_2), wrap(TH_1_2))) in
       let PRK_2e_2:bitstring=hkdfextract(TH_2_2, G_XY_2) in
       let (=method_2)=method_four in 
-          (let plaintext_2_2:bitstring=(C_R_2, EAD_2_2) in
+          (let EAD_2_4:bitstring=ID_CRED_HINT_2 in
+           let plaintext_2_2:bitstring=(C_R_2, EAD_2_4) in
            let KEYSTREAM_2A_2:bitstring=edhoc_kdf(PRK_2e_2, stzero, TH_2_2,
                                                   plaintext_length) in
            event eTHRShared( TH_2_2 );
@@ -245,7 +247,7 @@ let R(cid_2:bitstring, credR_2:bitstring, psk_2:bitstring,
                       );
                 event eAcceptRData( PRK_out_2, method_2, CRED_I_2, CRED_R_2, psk_2, Y_2,
                                     G_X_2,
-                                    (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_2, (EAD_3_2, (m1_2, (plaintext_2_2, plaintext_3a_2)))))))))
+                                    (TH_2_2, (TH_3_2, (TH_4_2, (suitesI_2, (EAD_1_2, (EAD_2_4, (EAD_3_2, (m1_2, (plaintext_2_2, plaintext_3a_2)))))))))
                       );
                 out(att,m4_2);
                 ((0)
@@ -276,6 +278,9 @@ process
 
 (*
 WARNING: the following wellformedness checks failed!
+
+Wellformedness-error in Process
+  Variable bound twice: EAD_2.
 
 Inexistant lemma actions
 ========================
@@ -317,6 +322,9 @@ Compiled at: 2024-10-30 11:11:02.432289291 UTC
 
 (*
 WARNING: the following wellformedness checks failed!
+
+Wellformedness-error in Process
+  Variable bound twice: EAD_2.
 
 Inexistant lemma actions
 ========================

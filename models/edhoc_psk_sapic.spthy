@@ -73,7 +73,8 @@ let I(~cid, method, ~credI, ~psk, ~cred) =
     let PRK_2e = hkdfextract(TH_2, G_YX) in
     let KEYSTREAM_2A = edhoc_kdf(PRK_2e,'tzero',TH_2,plaintext_length) in
     let plaintext_2 = decxor(CIPHERTEXT_2, KEYSTREAM_2A) in
-    let < C_R, ID_CRED_HINT, EAD_2> = plaintext_2 in
+    let < C_R, EAD_2> = plaintext_2 in
+    let ID_CRED_HINT = EAD_2 in
     let ID_CRED_PSK = make_id(CRED_I, ID_CRED_HINT, CRED_R, ~psk) in
 
     // if (check_grp(G_Y) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
@@ -157,6 +158,7 @@ let R(~cid, ~credR, ~psk, ~hint) =
     // else 
 
     if method = method_four() then (
+      let EAD_2 = ID_CRED_HINT in
       let plaintext_2 = <C_R, EAD_2> in
       let KEYSTREAM_2A = edhoc_kdf(PRK_2e,'tzero', TH_2, plaintext_length) in
       event THRShared(TH_2);
