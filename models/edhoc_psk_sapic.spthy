@@ -23,13 +23,13 @@ functions:
   encxor/2, decxor/2 [destructor],
 
   // Credential modeling functions
-  make_id/3,           // make_id(cred_i, cred_r, psk) -> ID_CRED_PSK
-  get_cred/3 [destructor] 
+  make_id/4,           // make_id(cred_i, id_cred_hint, cred_r, psk) -> ID_CRED_PSK
+  get_cred/4 [destructor] 
 
 equations:
   aeaddec(aeadenc(m,k,r,ad),k,r,ad) = m,
   decxor(encxor(m,k),k) = m,
-  get_cred(make_id(credI, credR, psk), psk, credR) = credI,
+  get_cred(make_id(credI, id_cred_hint, credR, psk), psk, credR, id_cred_hint) = credI,
 
 #include "Headers.splib"
 
@@ -42,7 +42,6 @@ let I(~cid, method, ~credI, ~psk, ~cred) =
 
   let CRED_I = ~credI in
   let CRED_R = ~cred in
-  let ID_CRED_PSK = make_id(CRED_I, CRED_R, ~psk) in
 
   new ~X;
   new ~EAD_3;
@@ -74,7 +73,8 @@ let I(~cid, method, ~credI, ~psk, ~cred) =
     let PRK_2e = hkdfextract(TH_2, G_YX) in
     let KEYSTREAM_2A = edhoc_kdf(PRK_2e,'tzero',TH_2,plaintext_length) in
     let plaintext_2 = decxor(CIPHERTEXT_2, KEYSTREAM_2A) in
-    let < C_R, EAD_2> = plaintext_2 in
+    let < C_R, ID_CRED_HINT, EAD_2> = plaintext_2 in
+    let ID_CRED_PSK = make_id(CRED_I, ID_CRED_HINT, CRED_R, ~psk) in
 
     // if (check_grp(G_Y) = grpid) then  // Not in the standard: we test against the value testgrpid, which is either a useless constant or the neutral element of the group.
       //  0
@@ -127,13 +127,14 @@ let I(~cid, method, ~credI, ~psk, ~cred) =
   )
 
 /* -------------------- Responder -------------------- */
-let R(~cid, ~idR, ~psk) =
+let R(~cid, ~credR, ~psk, ~hint) =
   in(<C_R,EAD_2,suitesR>);
   in(m1);
   let <method,suitesI,G_X,C_I,EAD_1> = m1 in
   event MethodOk(method);
 
-  let CRED_R = ~idR in
+  let CRED_R = ~credR in
+  let ID_CRED_HINT = ~hint in
   new ~Y;
   new ~EAD_4;
   event Share(~Y);
@@ -142,7 +143,7 @@ let R(~cid, ~idR, ~psk) =
   (
     CompromiseShare(~Y) |
     event RespondWithID(CRED_R);
-    event StartR(~cid, method, CRED_R, ~psk);
+    event StartR(~cid, method, CRED_R, ~psk, ID_CRED_HINT);
 
     let G_Y = 'g'^~Y in
     let G_XY = G_X^~Y in
@@ -173,7 +174,7 @@ let R(~cid, ~idR, ~psk) =
       let plaintext_3a = decxor(m3, KEYSTREAM_3) in
       let <ID_CRED_PSK_in, ciphertext_3b> = plaintext_3a in
 
-      let CRED_I = get_cred(ID_CRED_PSK_in, ~psk, CRED_R) in
+      let CRED_I = get_cred(ID_CRED_PSK_in, ~psk, CRED_R, ID_CRED_HINT) in
       
       if CRED_I = CRED_R then (
         0
@@ -219,14 +220,14 @@ process:
   !(new ~psk; 
     event Honest(~psk);
 
-    !(new ~cid; new ~id;
+    !(new ~cid; new ~id; new ~hint;
       // Identites are publicly known
       event HonestSubject(~id);
       out(~id);
 
       ( ( !in(cred); I(~cid, method_four(), ~id, ~psk, cred))
         |
-        (!R(~cid, ~id, ~psk))
+        (!R(~cid, ~id, ~psk, ~hint))
         |
         (compromise(~psk))
       )
@@ -246,6 +247,7 @@ diffEquivLemma:
     
     new ~cid1; new ~cid2; new ~cidR;
     new ~id1; new ~id2; new ~idR;
+    new ~hint;
     event HonestSubject(~id1);
     event HonestSubject(~id2);
     event HonestSubject(~idR);
@@ -257,7 +259,7 @@ diffEquivLemma:
     let cidI = diff(~cid1,~cid2) in
 
     ( 
-      (!R(~cidR, ~idR, ~psk))
+      (!R(~cidR, ~idR, ~psk, ~hint))
       |
       (!I(cidI, method_four(), idI, ~psk, ~idR))
     )
@@ -275,6 +277,7 @@ diffEquivLemma:
     
     new ~cid1; new ~cid2;
     new ~idR1; new ~idR2; new ~idI1;
+    new ~hint1; new ~hint2;
     event HonestSubject(~idR1);
     event HonestSubject(~idR2);
     event HonestSubject(~idI1);
@@ -283,12 +286,13 @@ diffEquivLemma:
     out(~idI1);
 
     let idR = diff(~idR1,~idR2) in
+    let hintR = diff(~hint1,~hint2) in
     let cidR = diff(~cid1,~cid2) in
 
     ( 
-      (!R(~cidR, ~idR, ~psk))
+      (!R(cidR, idR, ~psk, hintR))
       |
-      (!I(cid1, method_four(), idI1, ~psk, ~idR))
+      (!I(~cid1, method_four(), ~idI1, ~psk, idR))
     )
   )
 
@@ -304,6 +308,7 @@ diffEquivLemma:
     
     new ~cid1; new ~cid2; new ~cidR;
     new ~id1; new ~id2; new ~idR;
+    new ~hint;
     event HonestSubject(~id1);
     event HonestSubject(~id2);
     event HonestSubject(~idR);
@@ -315,11 +320,11 @@ diffEquivLemma:
     let cidI = diff(~cid1,~cid2) in
 
     ( 
-      (!R(~cidR, ~idR, ~psk))
+      (!R(~cidR, ~idR, ~psk, ~hint))
       |
       (!I(cidI, method_four(), idI, ~psk, ~idR))
       |
-      (!I(cid1, method_four(), id1, ~psk, ~idR))
+      (!I(~cid1, method_four(), ~id1, ~psk, ~idR))
     )
   )
 
@@ -335,6 +340,7 @@ diffEquivLemma:
     
     new ~cid1; new ~cid2;
     new ~idR1; new ~idR2; new ~idI1;
+    new ~hint1; new ~hint2;
     event HonestSubject(~idR1);
     event HonestSubject(~idR2);
     event HonestSubject(~idI1);
@@ -343,14 +349,15 @@ diffEquivLemma:
     out(~idI1);
 
     let idR = diff(~idR1,~idR2) in
+    let hintR = diff(~hint1,~hint2) in
     let cidR = diff(~cid1,~cid2) in
 
     ( 
-      (!R(~cidR, ~idR, ~psk))
+      (!R(cidR, idR, ~psk, hintR))
       |
-      (!I(cid1, method_four(), idI1, ~psk, ~idR))
+      (!I(~cid1, method_four(), ~idI1, ~psk, idR))
       |
-      (!I(cid1, method_four(), idI1, ~psk, ~idR1))
+      (!I(~cid1, method_four(), ~idI1, ~psk, ~idR1))
     )
   )
 

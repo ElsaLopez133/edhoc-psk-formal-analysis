@@ -8,17 +8,18 @@
 /* there exists at least one initiator AcceptI */
 lemma exists_acceptI[output=[proverif]]:
   exists-trace
-  "Ex cid m idI prk x gy credI credR psk #t.
-    AcceptI(cid, idI, m, credR, credR, prk, x, gy, psk) @ t"
+  "Ex cid m prk x gy credI credR psk #t.
+    AcceptI(cid, m, credR, credR, prk, x, gy, psk) @ t"
 
 /* there exists at least one responder AcceptR */
 lemma exists_acceptR[output=[proverif]]:
   exists-trace
-  "Ex cid idR m prk gx y credI credR psk #t.
-    AcceptR(cid, idR, m, credI, credR, prk, gx, y, psk) @ t"
+  "Ex cid m prk gx y credI credR psk #t.
+    AcceptR(cid, m, credI, credR, prk, gx, y, psk) @ t"
 
 #endif
 
+#ifdef Secrecy
 // ******************************************************************
 // ************** Confidentiality  **********************************
 // ******************************************************************
@@ -62,7 +63,9 @@ lemma secret_psk:
     | 
    (Ex #t. LeakSessionKey(prk)@t)
     "
+#endif
 
+#ifdef FullAgreement
 // ******************************************************************
 // ****Full Agreement: Authentication and key confirmation***********
 // ******************************************************************
@@ -109,7 +112,9 @@ lemma full_agreement_IR:
     | 
     (Ex #t. Compromise(psk)@t & t < j)
     "   
+#endif
 
+#ifdef PFS
 // *************************************************************
 // ********************** Perfect Forward Secrecy **************
 // *************************************************************
@@ -129,6 +134,7 @@ lemma pfs:
      |
      (Ex #t. LeakShare(y)@t & t < l )
   "
+#endif
 
 // ******************************************************************
 // ************** Attacker capabilities *****************************

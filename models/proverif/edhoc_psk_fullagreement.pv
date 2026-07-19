@@ -14,7 +14,6 @@ free stwelve:bitstring.
 free stzero:bitstring.
 fun aead_length():bitstring.
 fun aeadenc(bitstring,bitstring,bitstring,bitstring):bitstring.
-fun const_grp():bitstring.
 fun edhoc_kdf(bitstring,bitstring,bitstring,bitstring):bitstring.
 fun encxor(bitstring,bitstring):bitstring.
 fun exp(bitstring,bitstring):bitstring.
@@ -27,7 +26,7 @@ fun hkdfextract(bitstring,bitstring):bitstring.
 fun iv_length():bitstring.
 fun key_length():bitstring.
 fun length():bitstring.
-fun make_id(bitstring,bitstring,bitstring):bitstring.
+fun make_id(bitstring,bitstring,bitstring,bitstring):bitstring.
 fun method_four():bitstring.
 fun pair(bitstring,bitstring):bitstring.
 fun plaintext_length():bitstring.
@@ -61,54 +60,22 @@ event eSendRData(bitstring,bitstring,bitstring,bitstring,bitstring).
 event eShare(bitstring).
 event eSharePSK(bitstring).
 event eStartI(bitstring,bitstring,bitstring,bitstring,bitstring).
-event eStartR(bitstring,bitstring,bitstring,bitstring).
+event eStartR(bitstring,bitstring,bitstring,bitstring,bitstring).
 event eTHRShared(bitstring).
 event eTransmitEAD(bitstring,bitstring,bitstring).
 equation forall a:bitstring,b:bitstring; exp( exp(g,a),b) = exp(exp(g,b),a).
 equation forall x_1:bitstring, x_2:bitstring;   fst((x_1, x_2)) = x_1.
 equation forall x_1:bitstring, x_2:bitstring;   snd((x_1, x_2)) = x_2.
 reduc forall ad:bitstring, k:bitstring, m:bitstring, r:bitstring;   aeaddec(aeadenc(m, k, r, ad), k, r, ad) = m.
-reduc forall credI:bitstring, credR:bitstring, psk:bitstring;   get_cred(make_id(credI, credR, psk), psk, credR) = credI.
+reduc forall credI:bitstring, credR:bitstring, id_cred_hint:bitstring,
+psk:bitstring;   get_cred(make_id(credI, id_cred_hint, credR, psk), psk, credR,
+           id_cred_hint)
+= credI.
 reduc forall k:bitstring, m:bitstring;   decxor(encxor(m, k), k) = m.
-reduc forall x:bitstring;   check_grp(x) = const_grp.
+reduc forall x:bitstring, y:bitstring;   DL(x, y) = x.
 axiom k:bitstring; event(eShare( k )) && attacker( k ) ==> event(eLeakShare(k)).
 set preciseActions=true.
 
-(*secretR_psk*)
-query cid:bitstring, credI:bitstring, credR:bitstring, gx:bitstring,
-      m:bitstring, prk:bitstring, psk:bitstring, y:bitstring, i:time, j:time,
-      k:time, l:time, t:time;
- ((((event(eAcceptR( cid, m, credI, credR, prk, gx, y, psk ))@i) &&
-    (attacker( prk )@j)) &&
-   (event(eHonest( psk ))@k)) &&
-  (event(eHonestSubject( credI ))@l)) ==>
- (((event(eCompromise( psk ))@t) && (t < j)) ||
-  (event(eLeakSessionKey( prk ))@t))
-.
-(*secretI_psk*)
-query cid:bitstring, credI:bitstring, credR:bitstring, gy:bitstring,
-      m:bitstring, prk:bitstring, psk:bitstring, x:bitstring, i:time, j:time,
-      k:time, l:time, t:time;
- ((((event(eAcceptI( cid, m, credI, credR, prk, x, gy, psk ))@i) &&
-    (attacker( prk )@j)) &&
-   (event(eHonest( psk ))@k)) &&
-  (event(eHonestSubject( credR ))@l)) ==>
- ((event(eCompromise( psk ))@t) || (event(eLeakSessionKey( prk ))@t))
-.
-(*secret_psk*)
-query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
-      gx:bitstring, gy:bitstring, m:bitstring, prk:bitstring, psk:bitstring,
-      x:bitstring, y:bitstring, c:time, i:time, j:time, k:time, p:time, t:time;
- ((((event(eAcceptI( cid1, m, credI, credR, prk, x, gy, psk ))@i) &&
-    (event(eAcceptR( cid2, m, credI, credR, prk, gx, y, psk ))@j)) &&
-   (attacker( prk )@k)) &&
-  (event(eHonest( psk ))@p)) ==>
- (((((event(eCompromise( psk ))@t) && (t < k)) &&
-    (event(eLeakShare( x ))@c)) ||
-   (((event(eCompromise( psk ))@t) && (t < k)) &&
-    (event(eLeakShare( y ))@c))) ||
-  (event(eLeakSessionKey( prk ))@t))
-.
 (*full_agreement_RI*)
 query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
       credI1:bitstring, credI2:bitstring, credR:bitstring, credR1:bitstring,
@@ -161,28 +128,6 @@ query cid:bitstring, cid1:bitstring, cid2:bitstring, credI:bitstring,
    (i = j)) ||
   ((event(eCompromise( psk ))@t) && (t < j)))
 .
-(*pfs*)
-query cid1:bitstring, cid2:bitstring, credI:bitstring, credR:bitstring,
-      gx:bitstring, gy:bitstring, m:bitstring, prk:bitstring, psk:bitstring,
-      x:bitstring, y:bitstring, c:time, i:time, j:time, k:time, l:time, p:time,
-      t:time, u:time;
- ((((((((event(eAcceptI( cid1, m, credI, credR, prk, x, gy, psk ))@i) &&
-        (event(eAcceptR( cid2, m, credI, credR, prk, gx, y, psk ))@j)) &&
-       (event(eCompromise( psk ))@c))) &&
-     (event(eHonest( psk ))@k)) &&
-    (event(eHonestSubject( credI ))@p)) &&
-   (event(eHonestSubject( credR ))@u)) &&
-  (attacker( prk )@l)) ==>
- ((((event(eLeakSessionKey( prk ))@t) && (t < l)) ||
-   ((event(eLeakShare( x ))@t) && (t < l))) ||
-  ((event(eLeakShare( y ))@t) && (t < l)))
-.
-(*AttackerGetsAnyDHShare*)
-query X:bitstring, i:time; event(eLeakShare( X ))@i .
-(*AttackerGetsSessionKey*)
-query key:bitstring, i:time; event(eLeakSessionKey( key ))@i .
-(*AttackerGetsPSK*)
-query psk:bitstring, i:time; event(eCompromise( psk ))@i .
 let CompromiseShare(s_2:bitstring)=
     event eLeakShare( snull ).
 let leakSKey(key_2:bitstring)=
@@ -193,7 +138,6 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
     event eMethodOk( method_2 );
     let CRED_I_2:bitstring=credI_2 in
     let CRED_R_2:bitstring=cred_2 in
-    let ID_CRED_PSK_2:bitstring=make_id(CRED_I_2, CRED_R_2, psk_2) in
     new X_2:bitstring;
     new EAD_3_2:bitstring;
     event eShare( X_2 );
@@ -218,7 +162,9 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
            let KEYSTREAM_2A_2:bitstring=edhoc_kdf(PRK_2e_2, stzero, TH_2_2,
                                                   plaintext_length) in
            let plaintext_2_2:bitstring=decxor(CIPHERTEXT_2_2, KEYSTREAM_2A_2) in
-           let (C_R_2:bitstring, EAD_2_2:bitstring)=plaintext_2_2 in
+           let (C_R_2:bitstring, (ID_CRED_HINT_2:bitstring, EAD_2_2:bitstring))=plaintext_2_2 in
+           let ID_CRED_PSK_2:bitstring=make_id(CRED_I_2, ID_CRED_HINT_2, CRED_R_2,
+                                               psk_2) in
            let (=method_2)=method_four in 
                (let PRK_3e2m_2:bitstring=PRK_2e_2 in
                 event eDerivedIShared( G_YX_2 );
@@ -271,19 +217,21 @@ let I(cid_2:bitstring, method_2:bitstring, credI_2:bitstring,
                                   G_Y_2, psk_2
                         ))
                | (leakSKey(PRK_out_2))))))).
-let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
+let R(cid_2:bitstring, credR_2:bitstring, psk_2:bitstring,
+      hint_2:bitstring)=
     in(att,(C_R_2:bitstring, (EAD_2_2:bitstring, suitesR_2:bitstring)));
     in(att,m1_2:bitstring);
     let (method_2:bitstring, (suitesI_2:bitstring, (G_X_2:bitstring, (C_I_2:bitstring, EAD_1_2:bitstring))))=m1_2 in
     event eMethodOk( method_2 );
-    let CRED_R_2:bitstring=idR_2 in
+    let CRED_R_2:bitstring=credR_2 in
+    let ID_CRED_HINT_2:bitstring=hint_2 in
     new Y_2:bitstring;
     new EAD_4_2:bitstring;
     event eShare( Y_2 );
     event eLeakEAD( EAD_4_2 );
     ((CompromiseShare(Y_2))
    | (event eRespondWithID( CRED_R_2 );
-      event eStartR( cid_2, method_2, CRED_R_2, psk_2 );
+      event eStartR( cid_2, method_2, CRED_R_2, psk_2, ID_CRED_HINT_2 );
       let G_Y_2:bitstring=exp(g, Y_2) in
       let G_XY_2:bitstring=exp(G_X_2, Y_2) in
       let TH_1_2:bitstring=hash((wrap(method_2), (wrap(suitesI_2), (wrap(G_X_2), (wrap(C_I_2), EAD_1_2))))) in
@@ -305,7 +253,8 @@ let R(cid_2:bitstring, idR_2:bitstring, psk_2:bitstring)=
                                                  plaintext_length) in
            let plaintext_3a_2:bitstring=decxor(m3_2, KEYSTREAM_3_2) in
            let (ID_CRED_PSK_in_2:bitstring, ciphertext_3b_2:bitstring)=plaintext_3a_2 in
-           let CRED_I_2:bitstring=get_cred(ID_CRED_PSK_in_2, psk_2, CRED_R_2) in
+           let CRED_I_2:bitstring=get_cred(ID_CRED_PSK_in_2, psk_2, CRED_R_2,
+                                           ID_CRED_HINT_2) in
            let (=CRED_I_2)=CRED_R_2 in 
                (0)
            else(event eReceivedRm3( cid_2, method_2, CRED_I_2, CRED_R_2, psk_2, Y_2,
@@ -356,11 +305,168 @@ process
      !
      (new cid_2:bitstring;
       new id_2:bitstring;
+      new hint_2:bitstring;
       event eHonestSubject( id_2 );
       out(att,id_2);
       ((((!
           (in(att,cred_2:bitstring);
            I(cid_2, method_four, id_2, psk_2, cred_2)))
        | (!
-          (R(cid_2, id_2, psk_2)))))
+          (R(cid_2, id_2, psk_2, hint_2)))))
      | (compromise(psk_2)))))
+
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `full_agreement_RI' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "DerivedI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 3.5
+Git revision: cb62c305f8c8b8c1e664152aa33c95b7b8d5ef32, branch: master
+Compiled at: 2024-10-30 11:11:02.432289291 UTC
+*)
+
+(*
+WARNING: the following wellformedness checks failed!
+
+Inexistant lemma actions
+========================
+
+  lemma `full_agreement_RI' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "DerivedI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_RI' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptI" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "AcceptR" (arity 8, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "Compromise" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "Honest" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+  
+  lemma `full_agreement_IR' references action 
+    fact "HonestSubject" (arity 1, Linear) 
+  but no rule has such an action.
+
+Restriction actions
+===================
+
+  restriction `OnlyMethodFour' references action 
+    fact "MethodOk" (arity 1, Linear) 
+  but no rule has such an action.
+*)
+
+(*
+Generated from:
+Tamarin version 1.10.0
+Maude version 3.5
+Git revision: cb62c305f8c8b8c1e664152aa33c95b7b8d5ef32, branch: master
+Compiled at: 2024-10-30 11:11:02.432289291 UTC
+*)
