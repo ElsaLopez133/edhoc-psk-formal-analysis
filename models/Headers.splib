@@ -25,7 +25,10 @@ let leakSKey(key) =  event LeakSessionKey('null')
 
 #ifdef PQDL
 functions: DL/2 [destructor, private]
-reduc forall a:bitstring; DL(exp(g,a), g) = a.
+export queries:
+"
+reduc forall a:bitstring; DL(exp(g, a), g) = a  [private].
+"
 #else
 functions: DL/2 [destructor]
 equations: DL(x,y) = x 
